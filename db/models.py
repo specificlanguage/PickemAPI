@@ -7,16 +7,20 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    cityName = Column(String)
+    teamName = Column(String)
     logo = Column(String)
-    games = relationship("Game")
+    abbr = Column(String)
 
 class Game(Base):
     __tablename__ = "games"
 
     id = Column(Integer, primary_key=True, index=True)
-    homeTeam_id = Column(Integer, ForeignKey("teams.id"))
-    awayTeam_id = Column(Integer, ForeignKey("teams.id"))
+    homeTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
+    awayTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
     finished = Column(Boolean)
+    homeTeam = relationship("Team", foreign_keys=[homeTeam_id])
+    awayTeam = relationship("Team", foreign_keys=[awayTeam_id])
     picks = relationship("Pick", back_populates="game")
 
 class Pick(Base):
