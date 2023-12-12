@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
@@ -18,6 +18,9 @@ class Game(Base):
     id = Column(Integer, primary_key=True, index=True)
     homeTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
     awayTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
+    date = Column(Date)
+    startTimeUTC = Column(DateTime)
+    venue = Column(String)
     finished = Column(Boolean)
     homeTeam = relationship("Team", foreign_keys=[homeTeam_id])
     awayTeam = relationship("Team", foreign_keys=[awayTeam_id])

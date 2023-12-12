@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date, datetime
 
 class PickBase(BaseModel):
     id: int
@@ -17,6 +18,9 @@ class GameBase(BaseModel):
     finished: bool
 
 class GameCreate(GameBase):
+    date: date
+    startTimeUTC: datetime
+    venue: str
     homeTeam_id: int
     awayTeam_id: int
     picks: list[Pick] = []
