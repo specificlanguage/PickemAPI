@@ -12,6 +12,8 @@ router = APIRouter(
 )
 
 
+
+
 @router.get("/teams")
 async def get_games_with_teams(team1_abbr: str | None = None,
                                team2_abbr: str | None = None,
@@ -25,8 +27,7 @@ async def get_games_with_teams(team1_abbr: str | None = None,
         games = crud.getGamesWithAbbr(db, team1_abbr, team2_abbr)
         return games
 
-    games = crud.getGamesWithTeams(db, team1_id, team2_id)
-    return games
+    return crud.getGamesWithTeams(db, team1_id, team2_id)
 
 
 @router.get("/{id}")
@@ -35,3 +36,8 @@ async def get_game(id: str, db: Session = Depends(get_db)):
     if not game:
         raise HTTPException(status_code=404, detail="Game does not exist")
     return game
+
+
+@router.get("/date")
+async def get_game_by_date(year: int, month: int, day: int, db: Session = Depends(get_db)):
+    return crud.getGameByDate(db, year, month, day)

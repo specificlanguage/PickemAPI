@@ -16,14 +16,13 @@ class Pick(PickBase):
 class GameBase(BaseModel):
     id: int
     finished: bool
-
-class GameCreate(GameBase):
     date: date
     startTimeUTC: datetime
     venue: str
     homeTeam_id: int
     awayTeam_id: int
-    picks: list[Pick] = []
+
+class GameCreate(GameBase):
 
     class Config:
         from_attributes = True
