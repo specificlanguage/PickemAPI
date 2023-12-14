@@ -1,8 +1,10 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from db.alchemy import get_db
-from db.picks_crud import getTotalPicksForGame
+from dependencies import get_db, get_firebase_user
+from db.picks_crud import getTotalPicksForGame, createPickForGame
 
 router = APIRouter(
     prefix="/picks",
@@ -23,3 +25,12 @@ async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
         "homePicks": ans[1],
         "awayPicks": ans[2],
     }
+
+
+@router.post("")
+async def setPick(gameID: int, pickedHome: bool, user=Depends(get_firebase_user), db: Session = Depends(get_db)):
+    try:
+        createPickForGame(db, user["uid"], gameID, pickedHome)
+    except Exception as e:
+        logging.warning(e)
+        raise HTTPException(500, detail="Internal service error")

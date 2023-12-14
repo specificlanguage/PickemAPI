@@ -27,11 +27,12 @@ def getTotalPicksForGame(db: Session, gameID: int):
             .where(models.Pick.game_id == gameID).first())
 
 
-def createPickForGame(db: Session, userID: str, gameID: str, pickedHome: bool):
+def createPickForGame(db: Session, userID: str, gameID: int, pickedHome: bool, comment: str = ""):
     pick = models.Pick(
         userID=userID,
         gameID=gameID,
-        pickedHome=pickedHome
+        pickedHome=pickedHome,
+        comment=comment
     )
     db.add(pick)
     db.commit()

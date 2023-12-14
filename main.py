@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from routers import games, picks
-from db.alchemy import SessionLocal, get_db
+from db.alchemy import SessionLocal
+from dependencies import get_db
 from db import crud
 
 load_dotenv()

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime, Text
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
@@ -34,5 +34,6 @@ class Pick(Base):
     game_id = Column(Integer, ForeignKey("games.id"))
     pickedHome = Column(Boolean)
     game = relationship("Game", back_populates="picks")
+    comment = Column(Text)
 
 
