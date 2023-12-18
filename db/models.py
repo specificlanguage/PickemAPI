@@ -25,6 +25,7 @@ class Game(Base):
     homeTeam = relationship("Team", foreign_keys=[homeTeam_id])
     awayTeam = relationship("Team", foreign_keys=[awayTeam_id])
     picks = relationship("Pick", back_populates="game")
+    series_num = Column(Integer)
 
 class Pick(Base):
     __tablename__ = "picks"
