@@ -13,8 +13,6 @@ def getGamesBySeries(db: Session, seriesNum: int):
     homeTeam = aliased(models.Team, name="ht")
     awayTeam = aliased(models.Team, name="at")
     return crud.cleanupGameArraysWithTeams(
-        db.query(models.Game, homeTeam.teamName, awayTeam.teamName)
-            .join(homeTeam, onclause=homeTeam.id == models.Game.homeTeam_id)
-            .join(awayTeam, onclause=awayTeam.id == models.Game.awayTeam_id)
+        crud.getGameBaseQuery(db)
             .where(models.Game.series_num == seriesNum)
         .all())
