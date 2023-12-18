@@ -14,6 +14,7 @@ psycopg2-binary = "^2.9.9"
 alembic = "^1.13.0"
 httpx = "^0.25.2"
 firebase-admin = "^6.3.0"
+fastapi-cache2 = "^0.2.1"
 
 
 [build-system]
