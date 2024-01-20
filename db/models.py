@@ -2,6 +2,14 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateT
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
+class User(Base):
+    __tablename__ = "users"
+
+    uid = Column(String, primary_key=True, index=True)
+    username = Column(String)
+    email = Column(String)
+    imageURL = Column(String, nullable=True)
+
 class Team(Base):
     __tablename__ = "teams"
 

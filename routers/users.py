@@ -1,0 +1,37 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from dependencies import get_db
+from db.crud import users
+from db.schemas import UserBase
+
+router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    dependencies=[],
+    responses={404: {"message": "Not found"}}
+)
+
+
+@router.get("/")
+async def get_user_by_username(username: str, db: Session = Depends(get_db)):
+    user = users.getUserByUsername(db, username)
+    if not user:
+        raise HTTPException(status_code=404, detail="User does not exist")
+    return user
+
+
+@router.get("/id")
+async def get_user_by_id(id: str, db: Session = Depends(get_db)):
+    user = users.getUserByID(db, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User does not exist")
+    return user
+
+
+@router.post("/")
+async def createUser(user: UserBase, db: Session = Depends(get_db)):
+    if get_user_by_username(user.username, db):
+        raise HTTPException(status_code=400, detail="User already exists")
+    userID = users.insertUser(db, user.username, user.uid, user.email, user.imageURL)
+    return userID

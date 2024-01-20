@@ -1,6 +1,12 @@
 from pydantic import BaseModel
 from datetime import date, datetime
 
+class UserBase(BaseModel):
+    uid: str
+    username: str
+    email: str
+    imageURL: str
+
 class PickBase(BaseModel):
     id: int
     pickedHome: bool
