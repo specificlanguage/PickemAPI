@@ -2,7 +2,7 @@ import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, aliased
-from . import models, schemas
+from db import models, schemas
 
 
 def getGameBaseQuery(db: Session):
@@ -10,7 +10,7 @@ def getGameBaseQuery(db: Session):
     it should be used for context for every query to fetch a game."""
     homeTeam = aliased(models.Team, name="ht")
     awayTeam = aliased(models.Team, name="at")
-    return (db.query(models.Game, homeTeam.name, awayTeam.name)
+    return (db.query(models.Game, homeTeam.teamName, awayTeam.teamName)
             .join(homeTeam, onclause=homeTeam.id == models.Game.homeTeam_id)
             .join(awayTeam, onclause=awayTeam.id == models.Game.awayTeam_id))
 

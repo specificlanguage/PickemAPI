@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
-from db import crud, series
-from fastapi_cache.decorator import cache
+from db.crud import series, games
 
 router = APIRouter(
     prefix="/games",
@@ -23,15 +22,15 @@ async def get_games_with_teams(team1_abbr: str | None = None,
         if team1_abbr is None or team2_abbr is None:
             raise HTTPException(status_code=400, detail=
             "Either team1_id/team2_id must be specified, or team1_abbr/team2_abbr.")
-        games = crud.getGamesWithAbbr(db, team1_abbr, team2_abbr)
-        return games
+        gamesInfo = games.getGamesWithAbbr(db, team1_abbr, team2_abbr)
+        return gamesInfo
 
-    return crud.getGamesWithTeams(db, team1_id, team2_id)
+    return games.getGamesWithTeams(db, team1_id, team2_id)
 
 
 @router.get("/date")
 async def get_game_by_date(year: int, month: int, day: int, db: Session = Depends(get_db)):
-    return crud.getGameByDate(db, year, month, day)
+    return games.getGameByDate(db, year, month, day)
 
 
 @router.get("/series/seriesNums")
@@ -49,7 +48,7 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
 
 @router.get("/{id}")
 async def get_game(id: str, db: Session = Depends(get_db)):
-    game = crud.getGame(db, int(id))
+    game = games.getGame(db, int(id))
     if not game:
         raise HTTPException(status_code=404, detail="Game does not exist")
     return game

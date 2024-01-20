@@ -1,6 +1,6 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session, aliased
-from . import models, schemas, crud
+from db import models, schemas, crud
 
 
 def getSeriesNums():
@@ -12,7 +12,7 @@ def getSeriesNums():
 def getGamesBySeries(db: Session, seriesNum: int):
     homeTeam = aliased(models.Team, name="ht")
     awayTeam = aliased(models.Team, name="at")
-    return crud.cleanupGameArraysWithTeams(
-        crud.getGameBaseQuery(db)
+    return crud.games.cleanupGameArraysWithTeams(
+        crud.games.getGameBaseQuery(db)
             .where(models.Game.series_num == seriesNum)
         .all())
