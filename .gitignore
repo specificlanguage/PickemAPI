@@ -2,3 +2,5 @@
 !.env.example
 .idea
 **/pycache/**/.*
+.venv
+firebase_acct_key.json
