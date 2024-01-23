@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from dependencies import get_db, get_firebase_user
-from db.crud.picks import getTotalPicksForGame, createPickForGame
+from pickem.dependencies import get_db, get_firebase_user
+from pickem.db.crud.picks import getTotalPicksForGame, createPickForGame
 
 router = APIRouter(
     prefix="/picks",

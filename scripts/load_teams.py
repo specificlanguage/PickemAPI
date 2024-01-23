@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from db import models, schemas
+from pickem.db import models
+from pickem.db import schemas
 import httpx
 
-from db.alchemy import SessionLocal
+from pickem.db.alchemy import SessionLocal
 
 SEASON = 2024
 AL_ID, NL_ID = 103, 104

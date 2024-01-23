@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from dependencies import get_db
-from db.crud import series, games
+from pickem.dependencies import get_db
+from pickem.db.crud import series, games
 
 router = APIRouter(
     prefix="/games",

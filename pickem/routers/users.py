@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from dependencies import get_db
-from db.crud import users
-from db.schemas import UserBase
+from pickem.dependencies import get_db, get_firebase_user
+from pickem.db.crud import users
+from pickem.db.schemas import UserBase
 
 router = APIRouter(
     prefix="/users",
@@ -35,3 +35,10 @@ async def createUser(user: UserBase, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="User already exists")
     user = users.insertUser(db, user.username, user.uid, user.email, user.imageURL)
     return user
+
+@router.delete("/")
+async def deleteUser(user=Depends(get_firebase_user), db: Session = Depends(get_db)):
+    if (user.uid):
+        raise HTTPException(status_code=404, detail="Unauthorized")
+    users.deleteUser(db, id)
+    return {"message": "User deleted"}

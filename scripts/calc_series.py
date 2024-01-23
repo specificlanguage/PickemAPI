@@ -1,8 +1,8 @@
 # NOTE: this script may not work. If this happens, run the SQL query on the console directly.
 
 from sqlalchemy import text
-from db.alchemy import SessionLocal
-from db import models
+from pickem.db.alchemy import SessionLocal
+from pickem.db import models
 
 def get_session():
     session = SessionLocal()

@@ -1,7 +1,7 @@
 import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from db import models
+from pickem.db import models
 
 
 def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int):

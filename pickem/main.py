@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
-from routers import games, picks, users
-from db.alchemy import SessionLocal
-from dependencies import get_db
-from db import crud
+from pickem.routers import games, picks, users
+from pickem.db.alchemy import SessionLocal
+from pickem.dependencies import get_db
+from pickem.db import crud
 
 load_dotenv()
 app = FastAPI()

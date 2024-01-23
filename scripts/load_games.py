@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from db import models, schemas
+from db import models
+from pickem.db import schemas
 from datetime import datetime
 import httpx
 

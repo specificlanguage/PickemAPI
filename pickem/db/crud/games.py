@@ -2,7 +2,7 @@ import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, aliased
-from db import models, schemas
+from pickem.db import models, schemas
 
 
 def getGameBaseQuery(db: Session):

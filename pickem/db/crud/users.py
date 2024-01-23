@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, aliased
-from .. import models, schemas
+from pickem.db import models, schemas
 
 def getUserByUsername(db: Session, username: str):
     """Get a user by their username, or returns None if not found."""
