@@ -10,8 +10,12 @@ def getUserByID(db: Session, id: str):
     return db.query(models.User).where(models.User.id == id).first()
 
 def insertUser(db: Session, username: str, uid: str, email: str, imageURL=None):
-    user = models.User(username, uid, email, imageURL)
+    user = models.User(
+        username=username,
+        uid=uid,
+        email=email,
+        imageURL=imageURL)
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user.uid
+    return user

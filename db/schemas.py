@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from datetime import date, datetime
 
@@ -5,7 +7,7 @@ class UserBase(BaseModel):
     uid: str
     username: str
     email: str
-    imageURL: str
+    imageURL: Optional[str] = None
 
 class PickBase(BaseModel):
     id: int

@@ -21,7 +21,7 @@ async def get_user_by_username(username: str, db: Session = Depends(get_db)):
     return user
 
 
-@router.get("/id")
+@router.get("/")
 async def get_user_by_id(id: str, db: Session = Depends(get_db)):
     user = users.getUserByID(db, id)
     if not user:
@@ -31,7 +31,7 @@ async def get_user_by_id(id: str, db: Session = Depends(get_db)):
 
 @router.post("/")
 async def createUser(user: UserBase, db: Session = Depends(get_db)):
-    if get_user_by_username(user.username, db):
+    if users.getUserByUsername(db, user.username):
         raise HTTPException(status_code=400, detail="User already exists")
-    userID = users.insertUser(db, user.username, user.uid, user.email, user.imageURL)
-    return userID
+    user = users.insertUser(db, user.username, user.uid, user.email, user.imageURL)
+    return user
