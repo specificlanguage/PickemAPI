@@ -13,23 +13,23 @@ router = APIRouter(
 )
 
 
-@router.get("/")
-async def get_user_by_username(username: str, db: Session = Depends(get_db)):
-    user = users.getUserByUsername(db, username)
-    if not user:
-        raise HTTPException(status_code=404, detail="User does not exist")
-    return user
+@router.get("")
+async def get_user(username: str | None = None, id: str | None = None, db: Session = Depends(get_db)):
+    if id:
+        user = users.getUserByID(db, id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User does not exist")
+        return user
+    if username:
+        user = users.getUserByUsername(db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="User does not exist")
+        return user
+    else:
+        raise HTTPException(status_code=400, detail="Either username or id must be specified")
 
 
-@router.get("/")
-async def get_user_by_id(id: str, db: Session = Depends(get_db)):
-    user = users.getUserByID(db, id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User does not exist")
-    return user
-
-
-@router.post("/")
+@router.post("")
 async def createUser(user: UserBase, db: Session = Depends(get_db)):
     if users.getUserByUsername(db, user.username):
         raise HTTPException(status_code=400, detail="User already exists")

@@ -7,7 +7,7 @@ def getUserByUsername(db: Session, username: str):
 
 def getUserByID(db: Session, id: str):
     """Get a user by their ID, or returns None if not found."""
-    return db.query(models.User).where(models.User.id == id).first()
+    return db.query(models.User).where(models.User.uid == id).first()
 
 def insertUser(db: Session, username: str, uid: str, email: str, imageURL=None):
     user = models.User(

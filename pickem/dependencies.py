@@ -6,7 +6,7 @@ from firebase_admin import auth, credentials
 
 from pickem.db.alchemy import SessionLocal
 
-cred = credentials.Certificate("../firebase_acct_key.json")
+cred = credentials.Certificate("firebase_acct_key.json")
 
 def get_firebase_user(request: Request):
     id_token = request.headers.get('Authorization')
