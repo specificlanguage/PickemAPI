@@ -4,9 +4,8 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from pickem.routers import games, picks
-from pickem.db.alchemy import SessionLocal
 from pickem.dependencies import get_db
-from pickem.db import crud
+from pickem.db.crud import teams
 
 load_dotenv()
 app = FastAPI()
@@ -32,7 +31,7 @@ async def root():
 @app.get("/teams")
 async def getTeams(id: int | None = None, abbr: str | None = None, db: Session = Depends(get_db)):
     if id:
-        return crud.getTeam(db, id)
+        return teams.getTeamByID(db, id)
     if abbr:
-        return crud.getTeamByAbbr(db, abbr)
-    return crud.getAllTeams(db)
+        return teams.getTeamByAbbr(db, abbr)
+    return teams.getAllTeams(db)
