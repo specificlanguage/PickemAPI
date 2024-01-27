@@ -3,11 +3,10 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import date, datetime
 
-class UserBase(BaseModel):
+class UserPreferences(BaseModel):
     uid: str
-    username: str
-    email: str
-    imageURL: Optional[str] = None
+    favoriteTeam: int
+    selectionTiming: str
 
 class PickBase(BaseModel):
     id: int

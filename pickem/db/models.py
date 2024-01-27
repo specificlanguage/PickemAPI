@@ -2,6 +2,15 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateT
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    favoriteTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    favoriteTeam = relationship("Team", foreign_keys=[favoriteTeam_id])
+    selectionTiming = Column(String, nullable=False)
+
+
 class Team(Base):
     __tablename__ = "teams"
 
