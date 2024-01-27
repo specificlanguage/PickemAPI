@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from datetime import date, datetime
 
 class UserPreferences(BaseModel):
-    uid: str
+    id: str
     favoriteTeam: int
     selectionTiming: str
 

@@ -6,7 +6,7 @@ from fastapi_cache.decorator import cache
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
-from pickem.routers import games, picks
+from pickem.routers import games, picks, users
 from pickem.dependencies import get_db
 from pickem.db.crud import teams
 
@@ -15,6 +15,7 @@ app = FastAPI()
 
 app.include_router(games.router)
 app.include_router(picks.router)
+app.include_router(users.router)
 
 # TODO use env variables depending on env
 app.add_middleware(

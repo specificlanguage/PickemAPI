@@ -5,7 +5,7 @@ from .alchemy import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, unique=True)
     favoriteTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     favoriteTeam = relationship("Team", foreign_keys=[favoriteTeam_id])
     selectionTiming = Column(String, nullable=False)
