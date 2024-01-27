@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend # TODO later: use Redis
+from fastapi_cache.decorator import cache
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
@@ -29,9 +32,14 @@ async def root():
 
 
 @app.get("/teams")
+@cache(expire=1000000)  # We don't need to retrieve this data from the database very often, if at all.
 async def getTeams(id: int | None = None, abbr: str | None = None, db: Session = Depends(get_db)):
     if id:
         return teams.getTeamByID(db, id)
     if abbr:
         return teams.getTeamByAbbr(db, abbr)
     return teams.getAllTeams(db)
+
+@app.on_event("startup")
+async def startup():
+    FastAPICache.init(InMemoryBackend(), prefix="pickem")
