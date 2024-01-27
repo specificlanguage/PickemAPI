@@ -1,4 +1,4 @@
-from sqlalchemy import update
+from sqlalchemy import update, text
 from sqlalchemy.orm import Session
 
 from pickem.db import models, schemas
@@ -6,17 +6,19 @@ from pickem.db import models, schemas
 
 def setUserPreferences(db: Session, preferences: schemas.UserPreferences):
     """ Update or create a user's preferences. """
+    if preferences.favoriteTeam is 0: # Reset if no team
+        preferences.favoriteTeam = None
     userPrefs = models.User(id=preferences.id,
                             favoriteTeam_id=preferences.favoriteTeam,
                             selectionTiming=preferences.selectionTiming)
-    if (db.query(models.User).filter(models.User.id == userPrefs.id).first()):
-        update(models.User).where(models.User.id == userPrefs.id).values(
-            {"favoriteTeam_id": userPrefs.favoriteTeam_id,
-             "selectionTiming": userPrefs.selectionTiming})
-    else:
-        db.add(userPrefs)
-        db.commit()
-        db.refresh(userPrefs)
+    db.execute(text(f"""
+        INSERT INTO users ("id", "favoriteTeam_id", "selectionTiming") 
+        VALUES ('{userPrefs.id}', {userPrefs.favoriteTeam_id or 'NULL'}, '{userPrefs.selectionTiming}') 
+        ON CONFLICT (id) DO UPDATE SET
+        "favoriteTeam_id" = {userPrefs.favoriteTeam_id or 'NULL'},
+        "selectionTiming" = '{userPrefs.selectionTiming}'
+    """))
+    db.commit()
 
 
 def getUserPreferences(db: Session, userID: str):

@@ -16,11 +16,10 @@ router = APIRouter(
 )
 
 @router.put("/preferences")
-def set_preferences(favoriteTeam: Annotated[int, Body()],
+def set_preferences(favoriteTeam: Annotated[int | None, Body()],
                     selectionTiming: Annotated[str, Body()],
                     userID: str = Depends(get_user),
                     db: Session = Depends(get_db)):
-    print(userID)
     setUserPreferences(db, schemas.UserPreferences(
         favoriteTeam=favoriteTeam,
         selectionTiming=selectionTiming,
