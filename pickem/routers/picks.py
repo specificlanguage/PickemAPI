@@ -3,8 +3,10 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from pickem.dependencies import get_db
-from pickem.db.crud.picks import getTotalPicksForGame, createPickForGame
+from pickem.lib.sessions import createSession
+from pickem.db.crud import games, users, picks
+from pickem.db.schemas import Date
+from pickem.dependencies import get_db, get_user
 
 router = APIRouter(
     prefix="/picks",
@@ -16,7 +18,7 @@ router = APIRouter(
 
 @router.get("/{gameID}")
 async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
-    ans = getTotalPicksForGame(db, gameID)
+    ans = picks.getTotalPicksForGame(db, gameID)
     if not ans:
         raise HTTPException(404, detail="Game not found")
     return {
@@ -25,6 +27,22 @@ async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
         "homePicks": ans[1],
         "awayPicks": ans[2],
     }
+
+@router.post("session/new")
+async def getSessionPicks(date: Date | None, uid = Depends(get_user), db: Session = Depends(get_db)):
+    """ Creates a list of picks for a current session (only for a specific day) """
+    prefs = users.getUserPreferences(db, uid)
+    favTeam = prefs.favoriteTeam_id
+
+    if not date:
+        today = date.today()
+        date = Date(year=today.year, month=today.month, day=today.day)
+
+    gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
+    if not gameOptions:
+        raise HTTPException(404, detail="No games found for this date")
+
+    sessionGames =
 
 
 # TODO: configure Clerk information

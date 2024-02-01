@@ -3,6 +3,12 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import date, datetime
 
+class Date(BaseModel):
+    year: int
+    month: int
+    day: int
+
+
 class UserPreferences(BaseModel):
     id: str
     favoriteTeam: int

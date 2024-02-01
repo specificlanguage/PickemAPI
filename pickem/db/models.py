@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime, Text, Table
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
@@ -34,6 +34,7 @@ class Game(Base):
     homeTeam = relationship("Team", foreign_keys=[homeTeam_id])
     awayTeam = relationship("Team", foreign_keys=[awayTeam_id])
     picks = relationship("Pick", back_populates="game")
+    is_marquee = Column(Boolean)
     series_num = Column(Integer)
 
 class Pick(Base):
@@ -46,4 +47,25 @@ class Pick(Base):
     game = relationship("Game", back_populates="picks")
     comment = Column(Text)
 
-
+# sessionToGames = Table(
+#     "session_games",
+#     Base.metadata,
+#     Column("game_id", Integer, ForeignKey("games.id")),
+#     Column("session_id", Integer, ForeignKey("sessions.id")),
+# )
+#
+# sessionToPicks = Table(
+#     "session_picks",
+#     Base.metadata,
+#     Column("pick_id", Integer, ForeignKey("picks.id")),
+#     Column("session_id", Integer, ForeignKey("sessions.id")),
+# )
+#
+# class Session(Base):
+#     __tablename__ = "sessions"
+#
+#     id = Column(Integer, primary_key=True, index=True)
+#     user_id = Column(String)
+#     date = Column(Date)
+#     games = relationship("Game", secondary=sessionToGames, back_populates="sessions")
+#     picks = relationship("Pick", secondary=sessionToPicks, back_populates="sessions")
