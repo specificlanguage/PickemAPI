@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from pickem.lib.sessions import createSession
+# from pickem.lib.sessions import createSession
 from pickem.db.crud import games, users, picks
 from pickem.db.schemas import Date
 from pickem.dependencies import get_db, get_user
@@ -41,9 +41,7 @@ async def getSessionPicks(date: Date | None, uid = Depends(get_user), db: Sessio
     gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
     if not gameOptions:
         raise HTTPException(404, detail="No games found for this date")
-
-    sessionGames =
-
+    return {}
 
 # TODO: configure Clerk information
 # @router.post("")

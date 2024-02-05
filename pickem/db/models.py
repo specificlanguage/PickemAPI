@@ -69,5 +69,5 @@ class Session(Base):
     user_id = Column(String, ForeignKey("users.id"))
     date = Column(Date)
     is_series = Column(Boolean)
-    games = relationship("Game", secondary=sessionToGames, back_populates="sessions")
-    picks = relationship("Pick", secondary=sessionToPicks, back_populates="sessions")
+    games = relationship("Game", backref="games", secondary=sessionToGames, lazy=True)
+    picks = relationship("Pick", backref="picks", secondary=sessionToPicks, lazy=True)
