@@ -15,16 +15,20 @@ AUTHORIZED_PARTIES = ["http://localhost:5173"]
 def get_user(authorization: Annotated[str | None, Header()] = None):
     """ Decodes an authentication token in the request header and returns the user ID. """
 
-    # Query the Clerk API to get JWKS, get token and signing key
-    resp = httpx.get("https://api.clerk.dev/v1/jwks",
-                     headers={"Authorization": "Bearer " + os.environ["CLERK_API_KEY"]}).json()
-    signing_key = jwk_from_dict(resp["keys"][0])
-    token = authorization.split(" ")[1]
+    # Check to verify information is present
+    try:
+        # Query the Clerk API to get JWKS, get token and signing key
+        resp = httpx.get("https://api.clerk.dev/v1/jwks",
+                         headers={"Authorization": "Bearer " + os.environ["CLERK_API_KEY"]}).json()
+        signing_key = jwk_from_dict(resp["keys"][0])
+        token = authorization.split(" ")[1]
 
-    # Verify token, expiration time, and authorized party
-    message_received = JWT_Instance.decode(token, signing_key)
-    if message_received.get("azp") not in AUTHORIZED_PARTIES:
-        raise HTTPException(401, detail="Internal service error")
+        # Verify token, expiration time, and authorized party
+        message_received = JWT_Instance.decode(token, signing_key)
+        if message_received.get("azp") not in AUTHORIZED_PARTIES:
+            raise HTTPException(401, detail="Unauthorized")
+    except:
+        raise HTTPException(401, detail="Unauthorized")
     return message_received.get("sub")
 
 def get_user_optional(authorization: Annotated[str | None, Header()] = None):
