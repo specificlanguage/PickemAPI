@@ -60,3 +60,11 @@ class Team(TeamBase):
 
     class Config:
         from_attributes = True
+
+class SessionBase(BaseModel):
+    id: int
+    date: date
+    user_id: str
+    games: list[Game]
+    picks: list[Pick]
+    isSeries: bool
