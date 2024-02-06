@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime, Text, Table
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Date, DateTime, Text, Table, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .alchemy import Base
 
@@ -64,7 +64,7 @@ sessionToPicks = Table(
 
 class Session(Base):
     __tablename__ = "sessions"
-
+    __tableargs__ = (UniqueConstraint("user_id", "date", "is_series")),
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"))
     date = Column(Date)

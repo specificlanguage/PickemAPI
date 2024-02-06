@@ -1,11 +1,10 @@
 import logging, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-# from pickem.lib.sessions import createSession
 from pickem.db.crud import games, users, picks
-from pickem.db.crud.sessions import createSession
+from pickem.db.crud.sessions import createSession, getSession
 from pickem.db.schemas import Date
 from pickem.dependencies import get_db, get_user
 
@@ -16,6 +15,40 @@ router = APIRouter(
     responses={404: {"message": "Not found"}}
 )
 
+
+@router.post("/session/new")
+async def createSession(date: Date | None, response: Response, uid=Depends(get_user), db: Session = Depends(get_db)):
+    """ Creates a list of picks for a current session (only for a specific day) """
+    prefs = users.getUserPreferences(db, uid)
+    if not date:
+        today = date.today()
+        date = Date(year=today.year, month=today.month, day=today.day)
+    date = datetime.date(year=date.year, month=date.month, day=date.day)
+    session = getSession(db, uid, date, prefs.selectionTiming != "daily")
+
+    if session:  # Returns without creating a new session -- must keep unique constraint
+        return session
+
+    # Creates the session (and returns a 201 status code to indicate creation)
+    gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
+    if not gameOptions:
+        raise HTTPException(404, detail="No games found for this date")
+    session = createSession(db, uid, gameOptions,
+                            is_series=prefs.selectionTiming != "daily",
+                            favTeam=prefs.favTeam)
+    session["created"] = True
+    response.status_code = status.HTTP_201_CREATED
+    return session
+
+
+@router.get("/session")
+async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
+    prefs = users.getUserPreferences(db, uid)
+    date = datetime.date(year=year, month=month, day=day)
+    session = getSession(db, uid, date, is_series=prefs.selectionTiming != "daily")
+    if not session:
+        raise HTTPException(404, detail="Session not found")
+    return session
 
 @router.get("/{gameID}")
 async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
@@ -28,29 +61,6 @@ async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
         "homePicks": ans[1],
         "awayPicks": ans[2],
     }
-
-@router.post("/session/new")
-async def createSession(date: Date | None, uid = Depends(get_user), db: Session = Depends(get_db)):
-    """ Creates a list of picks for a current session (only for a specific day) """
-    prefs = users.getUserPreferences(db, uid)
-    favTeam = prefs.favoriteTeam_id
-    date = datetime.date(year=date.year, month=date.month, day=date.day)
-
-    if not date:
-        today = date.today()
-        date = Date(year=today.year, month=today.month, day=today.day)
-
-    gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
-    if not gameOptions:
-        raise HTTPException(404, detail="No games found for this date")
-    return createSession(db, uid, gameOptions,
-                  is_series=prefs.selectionTiming != "daily",
-                  favTeam=favTeam)
-
-# @router.get("/session")
-# async def getSession(date: Date | None, uid = Depends(get_user), db: Session = Depends(get_db)):
-#
-
 
 # TODO: configure Clerk information
 # @router.post("")

@@ -1,4 +1,4 @@
-import random
+import random, datetime
 from typing import Optional
 
 from sqlalchemy import values, insert
@@ -7,6 +7,12 @@ from sqlalchemy.orm import Session
 from pickem.db.schemas import Game
 from pickem.db import models
 
+
+def getSession(db: Session, uid: str, date: datetime.date, is_series: bool):
+    """ Returns the session for a given user on a given date """
+    sess = db.query(models.Session).filter(models.Session.date == date, models.Session.user_id == uid, models.Session.is_series == is_series).first()
+    games = sess.games
+    return sess
 
 def createSession(db: Session, uid: str, game_options: list[Game], is_series: bool, favTeam: Optional[int]):
     """ Creates a unique session for a user on a given date, optionally with a favorite team. """
