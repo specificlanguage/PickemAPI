@@ -69,7 +69,7 @@ def getGamesWithAbbr(db: Session, team1_abbr: str, team2_abbr: str):
         .all())
 
 
-def getGameByDate(db: Session, year: int, month: int, day: int):
+def getGamesByDate(db: Session, year: int, month: int, day: int):
     homeTeam = aliased(models.Team, name="ht")
     awayTeam = aliased(models.Team, name="at")
     return cleanupGameArraysWithTeams(

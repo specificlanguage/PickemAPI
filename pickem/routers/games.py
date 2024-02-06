@@ -30,7 +30,7 @@ async def get_games_with_teams(team1_abbr: str | None = None,
 
 @router.get("/date")
 async def get_game_by_date(year: int, month: int, day: int, db: Session = Depends(get_db)):
-    return games.getGameByDate(db, year, month, day)
+    return games.getGamesByDate(db, year, month, day)
 
 
 @router.get("/series/seriesNums")
