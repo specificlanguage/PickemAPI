@@ -59,8 +59,15 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
     return session
 
 @router.get("/{gameID}/all")
-async def get_total_picks(gameID: int, db: Session = Depends(get_db)):
-    ans = picks.getTotalPicksForGame(db, gameID)
+async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):
+    """
+    Gets the total number of picks, and the number of home picks and away picks for a certain game.
+    :param gameID: Game ID of the game to get picks for.
+    :param isSeries: Whether the picks should be queried by series or not.
+    :param db: Database session
+    :return: Object containing gameID, total picks, home picks, and away picks.
+    """
+    ans = picks.getTotalPicksForGame(db, gameID, isSeries)
     if not ans:
         raise HTTPException(404, detail="Game not found")
     return {

@@ -16,22 +16,23 @@ def getPicksByUser(db: Session, userID: str):
     return db.query(models.Pick).join(models.Pick.user_id == userID).all()
 
 
-def getTotalPicksForGame(db: Session, gameID: int):
+def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
     """
     Gets the total number of picks, and the number of home picks and away picks for a certain game.
     TODO: next commit: Check to see if game is series instead
     :param db: Database session
     :param gameID: Game ID of the game to get picks for.
+    :param isSeries: Whether the picks should be queried by series or not.
     :return: Object containing gameID, total picks, home picks, and away picks.
     """
     subquery = (db.query(func.count("*"))
-                .where(models.Pick.game_id == gameID and models.Pick.pickedHome)
+                .where(models.Pick.game_id == gameID, models.Pick.pickedHome, models.Pick.is_series == isSeries)
                 .scalar_subquery())
     return (db.query(
                 func.count("*").label("total"),
                 subquery.label("home_picks"),
                 (func.count("*") - subquery).label("away_picks"))
-            .where(models.Pick.game_id == gameID).first())
+            .where(models.Pick.game_id == gameID, models.Pick.is_series == isSeries).first())
 
 
 def get_pick(db: Session, userID: str, gameID: int):
@@ -42,7 +43,7 @@ def get_pick(db: Session, userID: str, gameID: int):
     :param gameID: Game ID of the game picked.
     :return: The pick object.
     """
-    return db.query(models.Pick).filter(models.Pick.user_id == userID and models.Pick.game_id == gameID).first()
+    return db.query(models.Pick).filter(models.Pick.user_id == userID, models.Pick.game_id == gameID).first()
 
 
 def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSeries: bool, comment: str = ""):
@@ -68,7 +69,7 @@ def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
     )
 
     # Add pick to a session if necessary
-    sess = db.query(models.Session).filter(models.Session.user_id == userID and models.Session.date == gameDate).first()
+    sess = db.query(models.Session).filter(models.Session.user_id == userID, models.Session.date == gameDate).first()
 
     if sess:
         sess.picks.append(pick)
@@ -90,7 +91,7 @@ def update_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
     :param comment: The extra comment the user stores when making this pick.
     :return: The pick object.
     """
-    pick = db.query(models.Pick).filter(models.Pick.user_id == userID and models.Pick.game_id == gameID).first()
+    pick = db.query(models.Pick).filter(models.Pick.user_id == userID, models.Pick.game_id == gameID).first()
     pick.pickedHome = pickedHome
     pick.is_series = isSeries
     pick.comment = comment
