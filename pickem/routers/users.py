@@ -10,7 +10,7 @@ from pickem.db import schemas
 
 router = APIRouter(
     prefix="/users",
-    tags=["picks"],
+    tags=["users"],
     dependencies=[],
     responses={404: {"message": "Not found"}}
 )

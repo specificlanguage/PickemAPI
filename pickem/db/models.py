@@ -39,11 +39,12 @@ class Game(Base):
 
 class Pick(Base):
     __tablename__ = "picks"
-
+    __tableargs__ = (UniqueConstraint("user_id", "game_id", "is_series")), # Don't make more than one
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"))
     game_id = Column(Integer, ForeignKey("games.id"))
     pickedHome = Column(Boolean)
+    is_series = Column(Boolean)
     game = relationship("Game", back_populates="picks")
     comment = Column(Text)
 

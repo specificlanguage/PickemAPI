@@ -1,6 +1,8 @@
-import logging, datetime
+import datetime
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from pickem.db.crud import games, users, picks
@@ -14,6 +16,12 @@ router = APIRouter(
     dependencies=[],
     responses={404: {"message": "Not found"}}
 )
+
+class PickEntry(BaseModel):
+    gameID: int
+    pickedHome: bool
+    isSeries: bool
+    comment: str | None = None
 
 
 @router.post("/session/new")
@@ -50,8 +58,8 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
         raise HTTPException(404, detail="Session not found")
     return session
 
-@router.get("/{gameID}")
-async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
+@router.get("/{gameID}/all")
+async def get_total_picks(gameID: int, db: Session = Depends(get_db)):
     ans = picks.getTotalPicksForGame(db, gameID)
     if not ans:
         raise HTTPException(404, detail="Game not found")
@@ -62,11 +70,48 @@ async def getTotalPicks(gameID: int, db: Session = Depends(get_db)):
         "awayPicks": ans[2],
     }
 
-# TODO: configure Clerk information
-# @router.post("")
-# async def setPick(gameID: int, pickedHome: bool, user=Depends(get_firebase_user), db: Session = Depends(get_db)):
-#     try:
-#         createPickForGame(db, user["uid"], gameID, pickedHome)
-#     except Exception as e:
-#         logging.warning(e)
-#         raise HTTPException(500, detail="Internal service error")
+@router.get("/{gameID}")
+async def get_pick(gameID: int, uid=Depends(get_user), db: Session = Depends(get_db)):
+    """
+    Gets the pick for a certain game for a certain user.
+    Requires authentication.
+    - **gameID**: The ID of the game to pick
+    """
+    pick = picks.get_pick(db, uid, gameID)
+    if not pick:
+        raise HTTPException(404, detail="Pick not found")
+    return {
+        "gameID": gameID,
+        "pickedHome": pick.pickedHome,
+        "isSeries": pick.is_series,
+        "comment": pick.comment
+    }
+
+@router.post("/{gameID}")
+async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), db: Session = Depends(get_db), ):
+    """
+    Sets the pick for a certain game (created) by a certain user, and associates it with each game.
+    Requires authentication.
+    - **gameID**: The ID of the game to pick
+    - **pickedHome**: Whether the user picked the home team in the game
+    - **isSeries**: Whether the user is picking for the series of games, rather than the individual game
+    """
+    try:
+
+        pick = picks.get_pick(db, uid, pick.gameID)
+
+        if pick:  # Pick already exists, just update instead of inserting.
+            return picks.update_pick(db, uid, pick.gameID, pick.pickedHome, pick.is_series, pick.comment if pick.comment else "")
+
+        # Creates pick.
+        pick = picks.create_pick(db, uid,
+                                 pick.gameID,
+                                 pick.pickedHome,
+                                 pick.isSeries,
+                                 pick.comment if pick.comment else "")  # Comment optional.
+
+        response.status_code = status.HTTP_201_CREATED
+        return pick
+    except Exception as e:
+        logging.warning(e)
+        raise HTTPException(500, detail="Internal service error")
