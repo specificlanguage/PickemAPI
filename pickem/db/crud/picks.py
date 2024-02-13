@@ -2,6 +2,7 @@ import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pickem.db import models
+from pickem.db.schemas import PickCreate
 
 
 def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int):
@@ -44,6 +45,31 @@ def get_pick(db: Session, userID: str, gameID: int):
     :return: The pick object.
     """
     return db.query(models.Pick).filter(models.Pick.user_id == userID, models.Pick.game_id == gameID).first()
+
+
+def create_picks(db: Session, userID: str, picks: list[PickCreate]):
+    """
+    Creates a list of picks for a user. Same functionality as create_pick, but for multiple picks.
+    Writes the picks to the database, updates if already present.
+    :param db:
+    :param userID:
+    :param picks:
+    :return:
+    """
+
+    pickObjects = [models.Pick(
+        user_id=userID,
+        game_id=pick.gameID,
+        pickedHome=pick.pickedHome,
+        is_series=pick.isSeries,
+        comment=pick.comment
+    ) for pick in picks]
+
+    for pick in pickObjects:
+        db.merge(pick)
+
+    db.add_all(pickObjects)
+    db.commit()
 
 
 def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSeries: bool, comment: str = ""):

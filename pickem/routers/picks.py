@@ -1,11 +1,13 @@
 import datetime
 import logging
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from pickem.db.crud import games, users, picks
+from pickem.db.crud.picks import create_picks
 from pickem.db.crud.sessions import createSession, getSession
 from pickem.db.schemas import Date
 from pickem.dependencies import get_db, get_user
@@ -22,6 +24,9 @@ class PickEntry(BaseModel):
     pickedHome: bool
     isSeries: bool
     comment: str | None = None
+
+class MultiplePickEntry(BaseModel):
+    picks: List[PickEntry]
 
 
 @router.post("/session/new")
@@ -58,13 +63,13 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
         raise HTTPException(404, detail="Session not found")
     return session
 
+
 @router.get("/{gameID}/all")
 async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):
     """
     Gets the total number of picks, and the number of home picks and away picks for a certain game.
-    :param gameID: Game ID of the game to get picks for.
-    :param isSeries: Whether the picks should be queried by series or not.
-    :param db: Database session
+    **gameID**: Game ID of the game to get picks for.
+    **isSeries**: Whether the picks should be queried by series or not.
     :return: Object containing gameID, total picks, home picks, and away picks.
     """
     ans = picks.getTotalPicksForGame(db, gameID, isSeries)
@@ -76,6 +81,7 @@ async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get
         "homePicks": ans[1],
         "awayPicks": ans[2],
     }
+
 
 @router.get("/{gameID}")
 async def get_pick(gameID: int, uid=Depends(get_user), db: Session = Depends(get_db)):
@@ -94,6 +100,7 @@ async def get_pick(gameID: int, uid=Depends(get_user), db: Session = Depends(get
         "comment": pick.comment
     }
 
+
 @router.post("/{gameID}")
 async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), db: Session = Depends(get_db), ):
     """
@@ -102,6 +109,7 @@ async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), d
     - **gameID**: The ID of the game to pick
     - **pickedHome**: Whether the user picked the home team in the game
     - **isSeries**: Whether the user is picking for the series of games, rather than the individual game
+    Returns the Pick object that was created.
     """
     try:
 
@@ -122,3 +130,20 @@ async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), d
     except Exception as e:
         logging.warning(e)
         raise HTTPException(500, detail="Internal service error")
+
+
+@router.post("/")
+async def set_multiple_picks(picks: MultiplePickEntry, uid=Depends(get_user), db: Session = Depends(get_db)):
+    """
+    Sets multiple picks for multiple games -- has same functionality as set_pick, but for multiple games. Requires authentication.
+    **picks**: List of picks to set.
+    Returns pick object created.
+    """
+    try:
+        create_picks(db, uid, picks.picks)
+        return {"message": "Picks created"}
+    except Exception as e:
+        logging.warning(e)
+        raise HTTPException(500, detail="Internal service error")
+
+

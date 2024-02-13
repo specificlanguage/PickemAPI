@@ -17,6 +17,8 @@ class UserPreferences(BaseModel):
 class PickBase(BaseModel):
     id: int
     pickedHome: bool
+    is_series: bool
+    comment: str | None = None
 
 class PickCreate(PickBase):
     pass
