@@ -116,7 +116,7 @@ async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), d
         pickObj = picks.get_pick(db, uid, pick.gameID)
 
         if pickObj:  # Pick already exists, just update instead of inserting.
-            return picks.update_pick(db, uid, pick.gameID, pick.pickedHome, pick.is_series, pick.comment if pick.comment else "")
+            return picks.update_pick(db, uid, pick.gameID, pick.pickedHome, pick.isSeries, pick.comment if pick.comment else "")
 
         # Creates pick.
         pickObj = picks.create_pick(db, uid,

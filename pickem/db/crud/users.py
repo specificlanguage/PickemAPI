@@ -6,7 +6,7 @@ from pickem.db import models, schemas
 
 def setUserPreferences(db: Session, preferences: schemas.UserPreferences):
     """ Update or create a user's preferences. """
-    if preferences.favoriteTeam is 0: # Reset if no team
+    if preferences.favoriteTeam == 0:  # Reset if no team
         preferences.favoriteTeam = None
     userPrefs = models.User(id=preferences.id,
                             favoriteTeam_id=preferences.favoriteTeam,
