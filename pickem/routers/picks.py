@@ -6,9 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from pickem.db.crud import games, users, picks
-from pickem.db.crud.picks import create_picks
-from pickem.db.crud.sessions import createSession, getSession
+from pickem.db.crud import games, users, picks, sessions
 from pickem.db.schemas import Date
 from pickem.dependencies import get_db, get_user
 
@@ -37,7 +35,7 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
         today = date.today()
         date = Date(year=today.year, month=today.month, day=today.day)
     date = datetime.date(year=date.year, month=date.month, day=date.day)
-    session = getSession(db, uid, date, prefs.selectionTiming != "daily")
+    session = sessions.getSession(db, uid, date, prefs.selectionTiming != "daily")
 
     if session:  # Returns without creating a new session -- must keep unique constraint
         return session
@@ -46,10 +44,9 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
     gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
     if not gameOptions:
         raise HTTPException(404, detail="No games found for this date")
-    session = createSession(db, uid, gameOptions,
+    session = sessions.createSession(db, uid, gameOptions,
                             is_series=prefs.selectionTiming != "daily",
-                            favTeam=prefs.favTeam)
-    session["created"] = True
+                            favTeam=prefs.favoriteTeam_id)
     response.status_code = status.HTTP_201_CREATED
     return session
 
@@ -58,7 +55,7 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
 async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
     prefs = users.getUserPreferences(db, uid)
     date = datetime.date(year=year, month=month, day=day)
-    session = getSession(db, uid, date, is_series=prefs.selectionTiming != "daily")
+    session = sessions.getSession(db, uid, date, is_series=prefs.selectionTiming != "daily")
     if not session:
         raise HTTPException(404, detail="Session not found")
     return session
@@ -133,14 +130,14 @@ async def set_pick(pick: PickEntry, response: Response, uid=Depends(get_user), d
 
 
 @router.post("/")
-async def set_multiple_picks(picks: MultiplePickEntry, uid=Depends(get_user), db: Session = Depends(get_db)):
+async def set_multiple_picks(pickList: MultiplePickEntry, uid=Depends(get_user), db: Session = Depends(get_db)):
     """
     Sets multiple picks for multiple games -- has same functionality as set_pick, but for multiple games. Requires authentication.
     **picks**: List of picks to set.
     Returns pick object created.
     """
     try:
-        create_picks(db, uid, picks.picks)
+        picks.create_picks(db, uid, pickList.picks)
         return {"message": "Picks created"}
     except Exception as e:
         logging.warning(e)

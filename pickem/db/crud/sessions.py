@@ -8,10 +8,13 @@ from pickem.db.schemas import Game
 from pickem.db import models
 
 
-def getSession(db: Session, uid: str, date: datetime.date, is_series: bool):
+def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> Session | None:
     """ Returns the session for a given user on a given date """
     sess = db.query(models.Session).filter(models.Session.date == date, models.Session.user_id == uid, models.Session.is_series == is_series).first()
+    if not sess:
+        return None
     games = sess.games
+    picks = sess.picks
     return sess
 
 def createSession(db: Session, uid: str, game_options: list[Game], is_series: bool, favTeam: Optional[int]):
