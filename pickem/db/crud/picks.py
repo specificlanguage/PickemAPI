@@ -49,13 +49,31 @@ def get_pick(db: Session, userID: str, gameID: int):
 
 def create_picks(db: Session, userID: str, picks: list[PickCreate]):
     """
-    Creates a list of picks for a user. Same functionality as create_pick, but for multiple picks.
+    Creates a list of picks for a user.
+    Same functionality as create_pick, but for multiple picks.
+    Note that this function assumes all games picked are the same date and the same type of is_series.
     Writes the picks to the database, updates if already present.
-    :param db:
-    :param userID:
-    :param picks:
+    :param db: Database session
+    :param userID: User ID
+    :param picks: The picks for the specific database.
     :return:
     """
+    gameIDs = [pick.gameID for pick in picks]
+    games = db.query(models.Game).filter(models.Game.id.in_(gameIDs)).all()
+
+    picksExist = db.query(models.Pick).filter(
+        models.Pick.game_id.in_(gameIDs),
+        models.Pick.user_id == userID).all()
+    picksAlreadyExist = {pick.game_id: pick for pick in picksExist}
+
+    sess = db.query(models.Session).filter(
+        models.Session.user_id == userID,
+        models.Session.is_series == picks[0].isSeries,
+        models.Session.date == games[0].date).first()
+
+    picksInSess = []
+    if sess is not None:
+        picksInSess = [pick.game_id for pick in sess.picks]
 
     pickObjects = [models.Pick(
         user_id=userID,
@@ -65,16 +83,23 @@ def create_picks(db: Session, userID: str, picks: list[PickCreate]):
         comment=pick.comment
     ) for pick in picks]
 
-    for pick in pickObjects:
-        db.merge(pick)
+    for pickObject in pickObjects:
+        if pickObject.game_id in picksAlreadyExist:  # Update instead of add
+            existingPick = picksAlreadyExist[pickObject.game_id]
+            existingPick.pickedHome = pickObject.pickedHome
+            existingPick.is_series = pickObject.is_series
+            existingPick.comment = pickObject.comment
+            db.refresh(existingPick)
+        elif pickObject.game_id not in picksInSess:  # Add via session if present
+            sess.picks.append(pickObject)
+        else:
+            db.add(pickObject)
 
-    db.add_all(pickObjects)
     db.commit()
-
 
 def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSeries: bool, comment: str = ""):
     """
-    Creates the prediction of a winner for a certain game, known as a pick. Does not check if the pick already exists!
+    Creates the prediction of a winner for a certain game, known as a pick. Merges pick if already exists.
     :param db: Database session to insert into
     :param userID: User ID of the pick user.
     :param gameID: Game ID of the game picked.
@@ -94,11 +119,20 @@ def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
         comment=comment
     )
 
-    # Add pick to a session if necessary
-    sess = db.query(models.Session).filter(models.Session.user_id == userID, models.Session.date == gameDate).first()
+    # Add pick to a session if necessary -- only if it matches.
+    sess = db.query(models.Session).filter(
+        models.Session.user_id == userID,
+        models.Session.date == gameDate).first()
 
     if sess:
-        sess.picks.append(pick)
+        games = sess.games
+        if game in games:
+            sess.picks.append(pick)
+        else:
+            db.add(pick)
+    else:
+        db.add(pick)
+
 
     db.commit()
     db.refresh(pick)

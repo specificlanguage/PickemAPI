@@ -8,7 +8,7 @@ from pickem.db.schemas import Game
 from pickem.db import models
 
 
-def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> Session | None:
+def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> models.Session | None:
     """ Returns the session for a given user on a given date """
     sess = db.query(models.Session).filter(models.Session.date == date, models.Session.user_id == uid, models.Session.is_series == is_series).first()
     if not sess:
@@ -17,7 +17,8 @@ def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> S
     picks = sess.picks
     return sess
 
-def createSession(db: Session, uid: str, game_options: list[Game], is_series: bool, favTeam: Optional[int]):
+
+def createSession(db: Session, uid: str, game_options: list[Game], is_series: bool, favTeam: Optional[int]) -> models.Session:
     """ Creates a unique session for a user on a given date, optionally with a favorite team. """
 
     session_games = []
@@ -47,4 +48,7 @@ def createSession(db: Session, uid: str, game_options: list[Game], is_series: bo
         sess.games.append(game)
     db.add(sess)  # Games are already added, so no need to do an add_all.
     db.commit()
+    db.refresh(sess)
+    games = sess.games
+    picks = sess.picks
     return sess

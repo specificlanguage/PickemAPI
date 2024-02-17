@@ -44,11 +44,11 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
     gameOptions = games.getGamesByDate(db, date.year, date.month, date.day)
     if not gameOptions:
         raise HTTPException(404, detail="No games found for this date")
-    session = sessions.createSession(db, uid, gameOptions,
+    newSess = sessions.createSession(db, uid, gameOptions,
                             is_series=prefs.selectionTiming != "daily",
                             favTeam=prefs.favoriteTeam_id)
     response.status_code = status.HTTP_201_CREATED
-    return session
+    return newSess
 
 
 @router.get("/session")
