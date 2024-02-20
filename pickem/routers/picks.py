@@ -1,8 +1,8 @@
 import datetime
 import logging
-from typing import List
+from typing import List, Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -61,6 +61,28 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
     return session
 
 
+@router.get("/all")
+async def get_total_picks_multiple(isSeries: bool, gameID: Annotated[list[int], Query()] = [], db: Session = Depends(get_db)):
+    """
+    Gets the total number of picks, and the number of home picks and away picks for multiple specified games.
+    :param gameIDs: Game IDs of the game to get picks for.
+    :param isSeries: Whether the picks should be queried by series or not.
+    :param db: Session to use.
+    :return:
+    """
+    gameResults = []
+    for gid in gameID:
+        ans = picks.getTotalPicksForGame(db, gid, isSeries)
+        if not ans:
+            raise HTTPException(404, detail="Game not found")
+        gameResults.append({
+            "game_id": gid,
+            "totalPicks": ans[0],
+            "homePicks": ans[1],
+            "awayPicks": ans[2],
+        })
+    return {"results": gameResults}
+
 @router.get("/{gameID}/all")
 async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):
     """
@@ -73,7 +95,7 @@ async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get
     if not ans:
         raise HTTPException(404, detail="Game not found")
     return {
-        "gameID": gameID,
+        "game_id": gameID,
         "totalPicks": ans[0],
         "homePicks": ans[1],
         "awayPicks": ans[2],
