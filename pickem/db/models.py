@@ -36,6 +36,9 @@ class Game(Base):
     picks = relationship("Pick", back_populates="game")
     is_marquee = Column(Boolean)
     series_num = Column(Integer)
+    winner = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    home_score = Column(Integer, nullable=True)
+    away_score = Column(Integer, nullable=True)
 
 class Pick(Base):
     __tablename__ = "picks"

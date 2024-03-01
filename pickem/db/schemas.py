@@ -36,6 +36,9 @@ class GameBase(BaseModel):
     venue: str
     homeTeam_id: int
     awayTeam_id: int
+    home_score: int | None = None
+    away_score: int | None = None
+    winner: int | None = None
 
 class GameCreate(GameBase):
 
