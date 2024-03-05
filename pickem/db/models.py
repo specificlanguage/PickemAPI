@@ -50,6 +50,7 @@ class Pick(Base):
     is_series = Column(Boolean)
     game = relationship("Game", back_populates="picks")
     comment = Column(Text)
+    correct = Column(Boolean, nullable=True)
 
 """ Many-to-many association tables for session games."""
 sessionToGames = Table(
