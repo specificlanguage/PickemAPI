@@ -2,11 +2,12 @@ from typing import Annotated
 
 import httpx
 import os
+import redis
 
 from fastapi import HTTPException, Header
 from jwt import JWT, jwk_from_dict
 
-from pickem.db.alchemy import SessionLocal
+from pickem.db.alchemy import SessionLocal, RedisPool
 
 JWT_Instance = JWT()
 AUTHORIZED_PARTIES = ["http://localhost:5173"]
@@ -44,3 +45,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_redis():
+    return redis.Redis(connection_pool=RedisPool)

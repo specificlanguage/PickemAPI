@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from redis import Redis
 from sqlalchemy.orm import Session
 
-from pickem.dependencies import get_db
+from pickem.dependencies import get_db, get_redis
 from pickem.db.crud import series, games
+from pickem.lib.status import retrieveStats
 
 router = APIRouter(
     prefix="/games",
@@ -45,6 +47,12 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No games for this series number")
     return games
 
+@router.get("/{id}/status")
+async def get_game_status(id: int, redis: Redis = Depends(get_redis)):
+    stats = await retrieveStats(id, redis)
+    if stats.get("error"):
+        raise HTTPException(status_code=404, detail="Game does not exist")
+    return stats
 
 @router.get("/{id}")
 async def get_game(id: str, db: Session = Depends(get_db)):
