@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from redis import Redis
 from sqlalchemy.orm import Session
@@ -48,15 +50,50 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
     return games
 
 @router.get("/{id}/status")
-async def get_game_status(id: int, redis: Redis = Depends(get_redis)):
+async def get_game_status(id: int, redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
+    """ Returns the current status of the game, usually in the form of:
+        Please note that due to limitations on Redis cache, all fields are returned as strings.
+        {
+            status: "COMPLETED" | "SCHEDULED" | "IN_PROGRESS",
+            gameID: int
+        }
+
+        For completed and in progress games the following two fields are added:
+        `homeScore: int` and `awayScore: int`
+
+        For scheduled games the following field is added:
+        `startTimeUTC: datetime`
+
+        For in-progress (and live games < 24 hours completed), all fields below are added:
+        `homeScore: int`, `awayScore: int`,
+        `currentInning: int`, `currentPitcher: str`, `atBat: str`
+        `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
+        Please note that the last five fields are 0 or 1, representing booleans.
+    """
+
     stats = await retrieveStats(id, redis)
-    if stats.get("error"):
+    if not stats.get("error"):
+        return stats
+
+    # Live stats not available, which means either scheduled or completed, must query the database.
+    game = await games.getGame(db, id)
+    if not game:
         raise HTTPException(status_code=404, detail="Game does not exist")
-    return stats
+    response = {
+        "status": "SCHEDULED" if game.startTimeUTC > datetime.now() else "COMPLETED",
+        "gameID": game.id,
+    }
+    if response["status"] == "SCHEDULED":
+        response["startTimeUTC"] = game.startTimeUTC
+    if response["status"] == "COMPLETED":
+        response["homeScore"] = game.home_score
+        response["awayScore"] = game.away_score
+    return response
+
 
 @router.get("/{id}")
 async def get_game(id: str, db: Session = Depends(get_db)):
-    game = games.getGame(db, int(id))
+    game = await games.getGame(db, int(id))
     if not game:
         raise HTTPException(status_code=404, detail="Game does not exist")
     return game

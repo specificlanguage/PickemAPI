@@ -12,5 +12,8 @@ async def retrieveStats(gameID: int, cache: Redis):
     response = cache.hgetall("game:" + str(gameID))
     if not response:
         return {"error": "Game does not have live stats."}
+    for key in response:
+        if response[key].isnumeric():
+            response[key] = int(response[key])
     return response
 
