@@ -71,14 +71,14 @@ async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Red
         `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
         Please note that the last five fields are 0 or 1, representing booleans.
     """
-    response = {}
+    response = []
 
     needsDBQuery = set(gameID)
     for gid in gameID:
         stats = await retrieveStats(gid, redis)
         if not stats.get("error"):
             needsDBQuery.remove(gid)
-            response[gid] = stats
+            response.append(stats)
 
     # Live stats not available for all items still in needsDBQuery, which means either scheduled or completed, must query the database.
     gameObjs = games.getGamesByIDs(db, list(needsDBQuery))
@@ -92,7 +92,7 @@ async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Red
         if statusObj["status"] == "COMPLETED":
             statusObj["homeScore"] = gameObj.home_score
             statusObj["awayScore"] = gameObj.away_score
-        response[gameObj.id] = statusObj
+        response.append(statusObj)
 
     return response
 
