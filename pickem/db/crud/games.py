@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, aliased
@@ -60,8 +61,6 @@ def getGamesWithTeams(db: Session, team1_id: int, team2_id: int):
 
 def getGamesWithAbbr(db: Session, team1_abbr: str, team2_abbr: str):
     subquery = db.query(models.Team.id).where(models.Team.abbr.in_([team1_abbr, team2_abbr]))
-    homeTeam = aliased(models.Team, name="ht")
-    awayTeam = aliased(models.Team, name="at")
     return cleanupGameArraysWithTeams(
         getGameBaseQuery(db)
         .filter(models.Game.homeTeam_id.in_(subquery))
@@ -71,10 +70,11 @@ def getGamesWithAbbr(db: Session, team1_abbr: str, team2_abbr: str):
 
 
 def getGamesByDate(db: Session, year: int, month: int, day: int):
-    homeTeam = aliased(models.Team, name="ht")
-    awayTeam = aliased(models.Team, name="at")
     return cleanupGameArraysWithTeams(
         getGameBaseQuery(db)
         .filter(models.Game.date == datetime.date(year, month, day))
         .all()
     )
+
+def getGamesByIDs(db: Session, gameIDs: List[int]):
+    return cleanupGameArraysWithTeams(getGameBaseQuery(db).filter(models.Game.id.in_(gameIDs)).all())

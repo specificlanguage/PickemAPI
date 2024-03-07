@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -49,8 +50,8 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No games for this series number")
     return games
 
-@router.get("/{id}/status")
-async def get_game_status(id: int, redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
+@router.get("/status")
+async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
     """ Returns the current status of the game, usually in the form of:
         Please note that due to limitations on Redis cache, all fields are returned as strings.
         {
@@ -70,26 +71,30 @@ async def get_game_status(id: int, redis: Redis = Depends(get_redis), db: Sessio
         `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
         Please note that the last five fields are 0 or 1, representing booleans.
     """
+    response = {}
 
-    stats = await retrieveStats(id, redis)
-    if not stats.get("error"):
-        return stats
+    needsDBQuery = set(gameID)
+    for gid in gameID:
+        stats = await retrieveStats(gid, redis)
+        if not stats.get("error"):
+            needsDBQuery.remove(gid)
+            response[gid] = stats
 
-    # Live stats not available, which means either scheduled or completed, must query the database.
-    game = await games.getGame(db, id)
-    if not game:
-        raise HTTPException(status_code=404, detail="Game does not exist")
-    response = {
-        "status": "SCHEDULED" if game.startTimeUTC > datetime.now() else "COMPLETED",
-        "gameID": game.id,
-    }
-    if response["status"] == "SCHEDULED":
-        response["startTimeUTC"] = game.startTimeUTC
-    if response["status"] == "COMPLETED":
-        response["homeScore"] = game.home_score
-        response["awayScore"] = game.away_score
+    # Live stats not available for all items still in needsDBQuery, which means either scheduled or completed, must query the database.
+    gameObjs = games.getGamesByIDs(db, list(needsDBQuery))
+    for gameObj in gameObjs:
+        statusObj = {
+            "status": "SCHEDULED" if gameObj.startTimeUTC > datetime.now() else "COMPLETED",
+            "gameID": gameObj.id,
+        }
+        if statusObj["status"] == "SCHEDULED":
+            statusObj["startTimeUTC"] = gameObj.startTimeUTC
+        if statusObj["status"] == "COMPLETED":
+            statusObj["homeScore"] = gameObj.home_score
+            statusObj["awayScore"] = gameObj.away_score
+        response[gameObj.id] = statusObj
+
     return response
-
 
 @router.get("/{id}")
 async def get_game(id: str, db: Session = Depends(get_db)):
