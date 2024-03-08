@@ -48,6 +48,7 @@ async def getGame(db: Session, gameID: int) -> models.Game | None:
     except TypeError as e:
         return None
 
+
 def getGamesWithTeams(db: Session, team1_id: int, team2_id: int):
     homeTeam = aliased(models.Team, name="ht")
     awayTeam = aliased(models.Team, name="at")
@@ -76,5 +77,7 @@ def getGamesByDate(db: Session, year: int, month: int, day: int):
         .all()
     )
 
-def getGamesByIDs(db: Session, gameIDs: List[int]):
+
+def getGamesByIDs(db: Session, gameIDs: List[int]) -> List[models.Game]:
+    """This function is used to get a list of games by their IDs."""
     return cleanupGameArraysWithTeams(getGameBaseQuery(db).filter(models.Game.id.in_(gameIDs)).all())

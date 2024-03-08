@@ -83,13 +83,16 @@ async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Red
     # Live stats not available for all items still in needsDBQuery, which means either scheduled or completed, must query the database.
     gameObjs = games.getGamesByIDs(db, list(needsDBQuery))
     for gameObj in gameObjs:
+        currStatus = "COMPLETED" if gameObj.finished else "SCHEDULED"
+        if gameObj.winner == None and gameObj.finished:
+            currStatus = "POSTPONED"
         statusObj = {
-            "status": "SCHEDULED" if gameObj.startTimeUTC > datetime.now() else "COMPLETED",
+            "status": currStatus,
             "gameID": gameObj.id,
         }
         if statusObj["status"] == "SCHEDULED":
             statusObj["startTimeUTC"] = gameObj.startTimeUTC
-        if statusObj["status"] == "COMPLETED":
+        if statusObj["status"] == "COMPLETED" or statusObj["status"] == "POSTPONED":
             statusObj["homeScore"] = gameObj.home_score
             statusObj["awayScore"] = gameObj.away_score
         response.append(statusObj)
