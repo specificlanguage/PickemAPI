@@ -36,6 +36,17 @@ def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
             .where(models.Pick.game_id == gameID, models.Pick.is_series == isSeries).first())
 
 
+def get_picks(db: Session, gameIDs: list[int], isSeries: bool, userID: str = None) -> models.Pick:
+    """
+    Gets the total number of picks, and the number of home picks and away picks for multiple specified games.
+    :param db:
+    :param gameIDs:
+    :param isSeries:
+    :return: List of pick objects
+    """
+    return db.query(models.Pick).filter(models.Pick.game_id.in_(gameIDs), models.Pick.user_id == userID, models.Pick.is_series == isSeries).all()
+
+
 def get_pick(db: Session, userID: str, gameID: int):
     """
     Gets the pick for a certain game for a certain user.

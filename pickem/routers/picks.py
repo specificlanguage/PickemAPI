@@ -83,6 +83,23 @@ async def get_total_picks_multiple(isSeries: bool, gameID: Annotated[list[int], 
         })
     return {"results": gameResults}
 
+
+@router.get("/user")
+async def get_multiple_picks(gameID: Annotated[list[int], Query()] = [], uid=Depends(get_user), db: Session = Depends(get_db)):
+    """
+    Gets the picks for multiple games. Requires authentication.
+    **gameIDs**: List of game IDs to get picks for.
+    Returns list of picks.
+    """
+    pickResp = picks.get_picks(db, gameID, False, uid)
+    return [{
+        "gameID": pick.game_id,
+        "pickedHome": pick.pickedHome,
+        "isSeries": pick.is_series,
+        "comment": pick.comment
+    } for pick in pickResp]
+
+
 @router.get("/{gameID}/all")
 async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):
     """
