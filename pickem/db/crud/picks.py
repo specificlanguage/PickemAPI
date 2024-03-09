@@ -169,3 +169,12 @@ def update_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
     db.commit()
     db.refresh(pick)
     return pick
+
+def get_leaders(db: Session, is_series: bool):
+    """
+    Get pick leaders for the entire season.
+    """
+    return (db.query(models.Pick.user_id, func.count(models.Pick.user_id).label("total"))
+               .filter(models.Pick.is_series == is_series, models.Pick.correct == True)
+               .group_by(models.Pick.user_id)
+               .order_by(func.count(models.Pick.user_id).desc()).all())

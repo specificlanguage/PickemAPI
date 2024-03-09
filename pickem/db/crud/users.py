@@ -24,3 +24,6 @@ def setUserPreferences(db: Session, preferences: schemas.UserPreferences):
 def getUserPreferences(db: Session, userID: str):
     """ Get a user's preferences. """
     return db.query(models.User).filter(models.User.id == userID).first()
+
+def getMultipleUsersPreferences(db: Session, userIDs: list[str]):
+    return db.query(models.User).filter(models.User.id._in(userIDs)).all()

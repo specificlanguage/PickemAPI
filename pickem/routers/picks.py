@@ -3,6 +3,7 @@ import logging
 from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
+from fastapi_cache.decorator import cache
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -59,6 +60,23 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
     if not session:
         raise HTTPException(404, detail="Session not found")
     return session
+
+
+# TODO later: Date range (i.e. by week or by month)
+@router.get("/leaderboard")
+@cache(expire=60 * 60 * 4)
+async def getLeaderboard(db: Session = Depends(get_db)):
+    # Todo later: Discriminate by series
+    leaderboard = picks.get_leaders(db, False)
+
+    leaders = [
+        {
+            "userID": leader[0],
+            "correctPicks": leader[1],
+        } for leader in leaderboard
+    ]
+
+    return {"leaders": leaders}
 
 
 @router.get("/all")
