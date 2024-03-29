@@ -50,31 +50,35 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No games for this series number")
     return games
 
+
 @router.get("/status")
-async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
-    """ Returns the current status of the game, usually in the form of:
-        Please note that due to limitations on Redis cache, all fields are returned as strings.
-        {
-            status: "COMPLETED" | "SCHEDULED" | "IN_PROGRESS",
-            gameID: int
-        }
+async def get_game_status(year: int, month: int, day: int, redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
+    """
+    Returns the current status of the games on the given date, usually in the form of:
+    Please note that due to limitations on Redis cache, all fields are returned as strings.
+    {
+        status: "COMPLETED" | "SCHEDULED" | "IN_PROGRESS",
+        gameID: int
+    }
 
-        For completed and in progress games the following two fields are added:
-        `homeScore: int` and `awayScore: int`
+    For completed and in progress games the following two fields are added:
+    `homeScore: int` and `awayScore: int`
 
-        For scheduled games the following field is added:
-        `startTimeUTC: datetime`
+    For scheduled games the following field is added:
+    `startTimeUTC: datetime`
 
-        For in-progress (and live games < 24 hours completed), all fields below are added:
-        `homeScore: int`, `awayScore: int`,
-        `currentInning: int`, `currentPitcher: str`, `atBat: str`
-        `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
-        Please note that the last five fields are 0 or 1, representing booleans.
+    For in-progress (and live games < 24 hours completed), all fields below are added:
+    `homeScore: int`, `awayScore: int`,
+    `currentInning: int`, `currentPitcher: str`, `atBat: str`
+    `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
+    Please note that the last five fields are 0 or 1, representing booleans.
     """
     response = []
+    gameObjs = games.getGamesByDate(db, year, month, day)
+    gameIDs = [gameObj.id for gameObj in gameObjs]
 
-    needsDBQuery = set(gameID)
-    for gid in gameID:
+    needsDBQuery = set(gameIDs)
+    for gid in gameIDs:
         stats = await retrieveStats(gid, redis)
         if not stats.get("error"):
             needsDBQuery.remove(gid)
@@ -98,6 +102,54 @@ async def get_game_status(gameID: Annotated[list[int], Query()] = [], redis: Red
         response.append(statusObj)
 
     return response
+
+
+
+
+@router.get("/status")
+async def get_game_status(gameID: int, redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
+    """ Returns the current status of one single game, usually in the form of:
+        Please note that due to limitations on Redis cache, all fields are returned as strings.
+        {
+            status: "COMPLETED" | "SCHEDULED" | "IN_PROGRESS",
+            gameID: int
+        }
+
+        For completed and in progress games the following two fields are added:
+        `homeScore: int` and `awayScore: int`
+
+        For scheduled games the following field is added:
+        `startTimeUTC: datetime`
+
+        For in-progress (and live games < 24 hours completed), all fields below are added:
+        `homeScore: int`, `awayScore: int`,
+        `currentInning: int`, `currentPitcher: str`, `atBat: str`
+        `isTopInning: int`, `outs: int`, `onFirst: int`, `onSecond: int`, `onThird: int`
+        Please note that the last five fields are 0 or 1, representing booleans.
+    """
+
+    stats = await retrieveStats(gameID, redis)
+    if not stats.get("error"):
+        return stats
+
+    # Live stats not available for all items still in needsDBQuery, which means either scheduled or completed,
+    # must query the database.
+    gameObjs = games.getGamesByIDs(db, [gameID])
+    for gameObj in gameObjs:
+        currStatus = "COMPLETED" if gameObj.finished else "SCHEDULED"
+        if gameObj.winner == None and gameObj.finished:
+            currStatus = "POSTPONED"
+        statusObj = {
+            "status": currStatus,
+            "gameID": gameObj.id,
+        }
+        if statusObj["status"] == "SCHEDULED":
+            statusObj["startTimeUTC"] = gameObj.startTimeUTC
+        if statusObj["status"] == "COMPLETED" or statusObj["status"] == "POSTPONED":
+            statusObj["homeScore"] = gameObj.home_score
+            statusObj["awayScore"] = gameObj.away_score
+        return statusObj
+
 
 @router.get("/{id}")
 async def get_game(id: str, db: Session = Depends(get_db)):
