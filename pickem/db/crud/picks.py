@@ -5,10 +5,20 @@ from pickem.db import models
 from pickem.db.schemas import PickCreate
 
 
-def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int):
-    return (db.query(models.Pick.game_id, models.Pick.pickedHome, models.Game.date, models.Game.id, models.Game.homeTeam, models.Game.awayTeam)
+def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int, isSeries: bool):
+    """
+    Gets the picks for a certain user on a certain date.
+    :param db: Database session instance
+    :param userID: User id
+    :param year: Year
+    :param month: Month
+    :param day: Day
+    :return:
+    """
+    return (db.query(models.Pick.game_id, models.Pick.pickedHome, models.Pick.is_series, models.Pick.comment)
             .join(models.Game, onclause=models.Game.id == models.Pick.game_id)
             .filter(models.Pick.user_id == userID)
+            .filter(models.Pick.is_series == isSeries)
             .filter(models.Game.date == datetime.date(year, month, day))
             .all())
 
@@ -72,16 +82,19 @@ def create_picks(db: Session, userID: str, picks: list[PickCreate]):
     gameIDs = [pick.gameID for pick in picks]
     games = db.query(models.Game).filter(models.Game.id.in_(gameIDs)).all()
 
+    # Check which picks already exist in this current instance
     picksExist = db.query(models.Pick).filter(
         models.Pick.game_id.in_(gameIDs),
         models.Pick.user_id == userID).all()
     picksAlreadyExist = {pick.game_id: pick for pick in picksExist}
 
+    # Check if a session exists for this user.
     sess = db.query(models.Session).filter(
         models.Session.user_id == userID,
         models.Session.is_series == picks[0].isSeries,
         models.Session.date == games[0].date).first()
 
+    # Offload anything that already exists in the session
     picksInSess = []
     if sess is not None:
         picksInSess = [pick.game_id for pick in sess.picks]

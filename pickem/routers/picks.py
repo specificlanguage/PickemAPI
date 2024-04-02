@@ -78,6 +78,18 @@ async def getLeaderboard(db: Session = Depends(get_db)):
 
     return {"leaders": leaders}
 
+@router.get("/date")
+async def get_picks_by_date(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
+    pickResults = picks.getPicksByUserDate(db, uid, year, month, day, False)
+    response = []
+    for gameID, pickedHome, isSeries, comment in pickResults:
+        response.append({
+            "gameID": gameID,
+            "pickedHome": pickedHome,
+            "isSeries": isSeries,
+            "comment": comment
+        })
+    return response
 
 @router.get("/all")
 async def get_total_picks_multiple(isSeries: bool, gameID: Annotated[list[int], Query()] = [], db: Session = Depends(get_db)):
