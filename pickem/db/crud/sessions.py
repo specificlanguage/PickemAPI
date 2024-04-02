@@ -29,7 +29,7 @@ def createSession(db: Session, uid: str, game_options: list[Game], is_series: bo
         if game.is_marquee:
             session_games.append(game)
             options.remove(game)
-        if favTeam and favTeam == game.homeTeam_id or favTeam == game.awayTeam_id:
+        elif favTeam and favTeam == game.homeTeam_id or favTeam == game.awayTeam_id:
             session_games.append(game)
             options.remove(game)
 

@@ -5,6 +5,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend # TODO later: use Re
 from fastapi_cache.decorator import cache
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+import httpx
 
 from pickem.routers import games, picks, users
 from pickem.dependencies import get_db
@@ -30,6 +31,28 @@ app.add_middleware(
 async def root():
     return {"app": "Pick'em API",
             "version": "0.0.1 alpha"}
+
+@app.get("/teams/standings")
+@cache(expire=60 * 60 * 3)  # Retrieve new stats only a few times a day.
+async def getTeamRecords():
+    resp =httpx.get("https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2024&standingTypes=regularSeason&hydrate=division,conference,sport,league,team,")
+    standingGroups = {"standings": [], "teams": {}}  # Want to return standings by division as well as by team
+    for standingGroup in resp.json()["records"]:
+        standingObj = {"name": standingGroup["division"]["name"], "teams": []}
+        for team in standingGroup["teamRecords"]:  # Parse the info from MLB's response
+            teamObj = {
+                "id": team["team"]["id"],
+                "name": team["team"]["name"],
+                "abbr": team["team"]["abbreviation"],
+                "wins": team["wins"],
+                "losses": team["losses"],
+                "winningPercentage": team["winningPercentage"],
+            }
+            standingObj["teams"].append(teamObj)
+            standingGroups["teams"][teamObj["id"]] = teamObj
+        standingGroups["standings"].append(standingObj)
+    return standingGroups
+
 
 
 @app.get("/teams")
