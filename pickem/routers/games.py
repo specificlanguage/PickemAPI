@@ -51,7 +51,7 @@ async def get_game_by_series(seriesNum: int, db: Session = Depends(get_db)):
     return games
 
 
-@router.get("/status")
+@router.get("/status/date")
 async def get_game_status(year: int, month: int, day: int, redis: Redis = Depends(get_redis), db: Session = Depends(get_db)):
     """
     Returns the current status of the games on the given date, usually in the form of:
@@ -97,8 +97,8 @@ async def get_game_status(year: int, month: int, day: int, redis: Redis = Depend
         if statusObj["status"] == "SCHEDULED":
             statusObj["startTimeUTC"] = gameObj.startTimeUTC
         if statusObj["status"] == "COMPLETED" or statusObj["status"] == "POSTPONED":
-            statusObj["homeScore"] = gameObj.home_score
-            statusObj["awayScore"] = gameObj.away_score
+            statusObj["home_score"] = gameObj.home_score
+            statusObj["away_score"] = gameObj.away_score
         response.append(statusObj)
 
     return response
