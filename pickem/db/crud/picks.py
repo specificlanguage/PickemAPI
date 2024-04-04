@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 from pickem.db import models
 from pickem.db.schemas import PickCreate
@@ -187,7 +187,14 @@ def get_leaders(db: Session, is_series: bool):
     """
     Get pick leaders for the entire season.
     """
-    return (db.query(models.Pick.user_id, func.count(models.Pick.user_id).label("total"))
-               .filter(models.Pick.is_series == is_series, models.Pick.correct == True)
-               .group_by(models.Pick.user_id)
-               .order_by(func.count(models.Pick.user_id).desc()).all())
+    return (
+        db.execute(text(f"""
+            SELECT picks.user_id as "userID",
+                   sum(case when picks.correct = true then 1 else 0 end) as "correctPicks",
+                   count(picks.user_id) as "totalPicks"
+            from picks
+            WHERE picks.id in (SELECT pick_id from session_picks) and picks.is_series = {is_series}
+            GROUP BY picks.user_id
+            ORDER BY "correctPicks" DESC;
+        """)).all()
+    )

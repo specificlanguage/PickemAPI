@@ -50,7 +50,7 @@ async def getUsers():
     clerkResp = httpx.get(
         "https://api.clerk.dev/v1/users",
         headers={"Authorization": "Bearer " + os.environ["CLERK_API_KEY"]}).json()
-    users = {user["id"]: {"id": user["id"], "username": user["username"]} for user in clerkResp}
+    users = {user["id"]: {"id": user["id"], "username": user["username"], "image_url": user["image_url"]} for user in clerkResp}
     return {
         "users": users
     }

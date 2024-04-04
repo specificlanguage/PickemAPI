@@ -68,15 +68,11 @@ async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user),
 async def getLeaderboard(db: Session = Depends(get_db)):
     # Todo later: Discriminate by series
     leaderboard = picks.get_leaders(db, False)
-
-    leaders = [
-        {
-            "userID": leader[0],
-            "correctPicks": leader[1],
-        } for leader in leaderboard
-    ]
-
-    return {"leaders": leaders}
+    return {"leaders": [{
+        "userID": userID,
+        "correctPicks": correctPicks,
+        "totalPicks": totalPicks,
+    } for userID, correctPicks, totalPicks in leaderboard]}
 
 @router.get("/date")
 async def get_picks_by_date(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
