@@ -125,14 +125,29 @@ async def get_user_picks(
     """
     if not uid and not username:
         raise HTTPException(404, detail="User not found or not provided")
-    if uid:
-        dbResp = picks.getUserPickHistory(db, uid, offset=offset)
-        return dbResp
-    if username:
-        userId = getUserIdByUsername(username)
-        dbResp = picks.getUserPickHistory(db, userId, offset=offset)
-        return dbResp
-
+    if not uid and username:
+        uid = getUserIdByUsername(username)
+    dbResp = picks.getUserPickHistory(db, uid, offset=offset)
+    return [{
+        "user_id": row["user_id"],
+        "game_id": row["game_id"],
+        "pickedHome": row["pickedHome"],
+        "isSeries": row["is_series"],
+        "isSession": row["inSession"],
+        "correct": row["correct"],
+        "game": {
+            "id": row["game_id"],
+            "homeTeam": row["homeTeam_id"],
+            "awayTeam": row["awayTeam_id"],
+            "date": row["date"],
+            "finished": row["finished"],
+            "winner": row["winner"],
+            "startTimeUTC": row["startTimeUTC"],
+            "isMarquee": row["is_marquee"],
+            "home_score": row["home_score"],
+            "away_score": row["away_score"],
+        }
+    } for row in dbResp]
 
 @router.get("/{gameID}/all")
 async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):

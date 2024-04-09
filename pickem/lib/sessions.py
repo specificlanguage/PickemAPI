@@ -10,5 +10,3 @@ class Session(BaseModel):
     games: list[Game]
 
 
-
-

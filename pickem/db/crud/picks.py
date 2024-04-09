@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import func, text
+from sqlalchemy import func, text, case
 from sqlalchemy.orm import Session
 from pickem.db import models
 from pickem.db.schemas import PickCreate
@@ -32,11 +32,19 @@ def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 1
     :param limit: The number of items to retrieve -- set to 100 by default, but can be changed if desired.
     :return:
     """
-    query = db.query(models.Pick).filter(models.Pick.user_id == userID)
-    query = query.limit(limit).offset(offset)
-    picks = query.all()
-    games = [p.game for p in picks]
-    return picks
+    queryResult = db.execute(text(f"""
+        SELECT picks.*, games.*,
+        games.date as "date",
+        picks.id IN (SELECT session_picks.pick_id FROM session_picks) as "inSession"
+        FROM picks, games
+        WHERE picks.user_id = '{userID}' AND picks.game_id = games.id
+        ORDER BY "startTimeUTC" DESC
+        LIMIT {limit} OFFSET {offset};
+    """)).mappings().all()
+
+    # print([str(p) for p in picks])
+    # # games = [p.game for p in picks]
+    return queryResult
 
 def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
     """
