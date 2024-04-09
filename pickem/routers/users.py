@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from pickem.dependencies import get_db, get_user, get_user_optional
 from pickem.db.crud.users import getUserPreferences, setUserPreferences
 from pickem.db import schemas
+from pickem.lib.users import getUsersFromClerk
 
 router = APIRouter(
     prefix="/users",
@@ -44,13 +45,20 @@ def get_preferences(uid: str,
             "favoriteTeam_id": res.favoriteTeam_id
         }
 
+
 @router.get("/all")
 @cache(expire=60 * 60 * 24)
 async def getUsers():
-    clerkResp = httpx.get(
-        "https://api.clerk.dev/v1/users",
-        headers={"Authorization": "Bearer " + os.environ["CLERK_API_KEY"]}).json()
-    users = {user["id"]: {"id": user["id"], "username": user["username"], "image_url": user["image_url"]} for user in clerkResp}
+    clerkResp = getUsersFromClerk()
+    users = {user["id"]: {"id": user["id"], "username": user["username"], "image_url": user["image_url"]} for user in
+             clerkResp}
     return {
         "users": users
     }
+
+
+@router.get("/{uid}")
+async def getUserByID(uid: str):
+    """ Retrieves a user and their information by their ID from Clerk."""
+    return {user["id"]: {"id": user["id"], "username": user["username"], "image_url": user["image_url"]} for user in
+            getUsersFromClerk() if user["id"] == uid}

@@ -23,9 +23,20 @@ def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int
             .all())
 
 
-def getPicksByUser(db: Session, userID: str):
-    return db.query(models.Pick).join(models.Pick.user_id == userID).all()
-
+def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 100):
+    """
+    Retrieves a user's pick history, and also populates the games within this list.
+    :param db: Database session
+    :param userID: User ID
+    :param offset: Offset to retrieve
+    :param limit: The number of items to retrieve -- set to 100 by default, but can be changed if desired.
+    :return:
+    """
+    query = db.query(models.Pick).filter(models.Pick.user_id == userID)
+    query = query.limit(limit).offset(offset)
+    picks = query.all()
+    games = [p.game for p in picks]
+    return picks
 
 def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
     """

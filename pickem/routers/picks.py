@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from pickem.db.crud import games, users, picks, sessions
 from pickem.db.schemas import Date
+from pickem.lib.users import getUserIdByUsername
 from pickem.dependencies import get_db, get_user
 
 router = APIRouter(
@@ -110,20 +111,27 @@ async def get_total_picks_multiple(isSeries: bool, gameID: Annotated[list[int], 
     return {"results": gameResults}
 
 
-@router.get("/user")
-async def get_multiple_picks(gameID: Annotated[list[int], Query()] = [], uid=Depends(get_user), db: Session = Depends(get_db)):
+@router.get("/user/history")
+async def get_user_picks(
+        uid: str | None = None,
+        username: str | None = None,
+        db: Session = Depends(get_db),
+        offset: int = 0):
     """
-    Gets the picks for multiple games. Requires authentication.
-    **gameIDs**: List of game IDs to get picks for.
+    Gets the historical picks for a user. given a username or a user id, optionally an offset if all exhausted.
+    :param uid: User id to retrieve.
+    :param username: Username to retrieve. This is slightly slower since it need to obtain a userID from cache.
     Returns list of picks.
     """
-    pickResp = picks.get_picks(db, gameID, False, uid)
-    return [{
-        "gameID": pick.game_id,
-        "pickedHome": pick.pickedHome,
-        "isSeries": pick.is_series,
-        "comment": pick.comment
-    } for pick in pickResp]
+    if not uid and not username:
+        raise HTTPException(404, detail="User not found or not provided")
+    if uid:
+        dbResp = picks.getUserPickHistory(db, uid, offset=offset)
+        return dbResp
+    if username:
+        userId = getUserIdByUsername(username)
+        dbResp = picks.getUserPickHistory(db, userId, offset=offset)
+        return dbResp
 
 
 @router.get("/{gameID}/all")
