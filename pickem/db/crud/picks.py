@@ -37,7 +37,9 @@ def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 1
         games.date as "date",
         picks.id IN (SELECT session_picks.pick_id FROM session_picks) as "inSession"
         FROM picks, games
-        WHERE picks.user_id = '{userID}' AND picks.game_id = games.id
+        WHERE picks.user_id = '{userID}' 
+            AND picks.game_id = games.id
+            AND games.date <= CURRENT_DATE
         ORDER BY "startTimeUTC" DESC
         LIMIT {limit} OFFSET {offset};
     """)).mappings().all()

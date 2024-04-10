@@ -9,6 +9,7 @@ class User(Base):
     favoriteTeam_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     favoriteTeam = relationship("Team", foreign_keys=[favoriteTeam_id])
     selectionTiming = Column(String, nullable=False)
+    description = Column(String, nullable=True)
 
 
 class Team(Base):

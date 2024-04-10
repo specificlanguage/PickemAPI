@@ -13,6 +13,7 @@ class UserPreferences(BaseModel):
     id: str
     favoriteTeam: int
     selectionTiming: str
+    description: str | None = None
 
 class PickBase(BaseModel):
     id: int
