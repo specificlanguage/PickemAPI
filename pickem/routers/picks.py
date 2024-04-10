@@ -129,16 +129,16 @@ async def get_user_picks(
         uid = getUserIdByUsername(username)
     dbResp = picks.getUserPickHistory(db, uid, offset=offset)
     return [{
-        "user_id": row["user_id"],
-        "game_id": row["game_id"],
+        "userID": row["user_id"],
+        "gameID": row["game_id"],
         "pickedHome": row["pickedHome"],
         "isSeries": row["is_series"],
         "isSession": row["inSession"],
         "correct": row["correct"],
         "game": {
             "id": row["game_id"],
-            "homeTeam": row["homeTeam_id"],
-            "awayTeam": row["awayTeam_id"],
+            "homeTeam_id": row["homeTeam_id"],
+            "awayTeam_id": row["awayTeam_id"],
             "date": row["date"],
             "finished": row["finished"],
             "winner": row["winner"],
