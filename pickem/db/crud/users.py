@@ -28,7 +28,6 @@ def setUserPreferences(db: Session, preferences: schemas.UserPreferences):
         }
     )
     db.execute(stmt)
-    db.refresh(userPrefs)
     db.commit()
 
 
