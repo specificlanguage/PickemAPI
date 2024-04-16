@@ -1,10 +1,11 @@
 import logging
 import os
-from typing import Annotated
+from typing import Annotated, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi_cache.decorator import cache
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from pickem.dependencies import get_db, get_user, get_user_optional
@@ -19,17 +20,20 @@ router = APIRouter(
     responses={404: {"message": "Not found"}}
 )
 
+class PreferencesPut(BaseModel):
+    favoriteTeam: Optional[int] = None
+    selectionTiming: Optional[str] = None
+    description: Optional[str] = None
 
 @router.put("/preferences")
-def set_preferences(favoriteTeam: Annotated[int | None, Body()],
-                    selectionTiming: Annotated[str, Body()],
-                    description: Annotated[str | None, Body()],
+def set_preferences(prefs: PreferencesPut,
                     userID: str = Depends(get_user),
                     db: Session = Depends(get_db)):
+    existingPrefs = getUserPreferences(db, userID)
     setUserPreferences(db, schemas.UserPreferences(
-        favoriteTeam=favoriteTeam,
-        selectionTiming=selectionTiming,
-        description=description,
+        favoriteTeam=prefs.favoriteTeam if prefs.favoriteTeam else existingPrefs.favoriteTeam_id,
+        selectionTiming=prefs.selectionTiming if prefs.selectionTiming else existingPrefs.selectionTiming,
+        description=prefs.description if prefs.description else existingPrefs.description,
         id=userID))
     return {"message": "Preferences updated"}
 

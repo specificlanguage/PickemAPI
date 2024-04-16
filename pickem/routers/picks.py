@@ -37,7 +37,7 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
         today = date.today()
         date = Date(year=today.year, month=today.month, day=today.day)
     date = datetime.date(year=date.year, month=date.month, day=date.day)
-    session = sessions.getSession(db, uid, date, prefs.selectionTiming != "daily")
+    session = sessions.getSession(db, uid, date)
 
     if session:  # Returns without creating a new session -- must keep unique constraint
         return session
@@ -47,7 +47,7 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
     if not gameOptions:
         raise HTTPException(404, detail="No games found for this date")
     newSess = sessions.createSession(db, uid, gameOptions,
-                            is_series=prefs.selectionTiming != "daily",
+                            selTiming=prefs.selectionTiming,
                             favTeam=prefs.favoriteTeam_id)
     response.status_code = status.HTTP_201_CREATED
     return newSess
@@ -55,9 +55,10 @@ async def createSession(date: Date | None, response: Response, uid=Depends(get_u
 
 @router.get("/session")
 async def getPickSession(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
+    """ This only retrieves daily sessions, not series. A new endpoint will come later for this specifically. """
     prefs = users.getUserPreferences(db, uid)
     date = datetime.date(year=year, month=month, day=day)
-    session = sessions.getSession(db, uid, date, is_series=prefs.selectionTiming != "daily")
+    session = sessions.getSession(db, uid, date)
     if not session:
         raise HTTPException(404, detail="Session not found")
     return session

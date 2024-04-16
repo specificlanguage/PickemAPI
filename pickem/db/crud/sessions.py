@@ -8,9 +8,9 @@ from pickem.db.schemas import Game
 from pickem.db import models
 
 
-def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> models.Session | None:
+def getSession(db: Session, uid: str, date: datetime.date) -> models.Session | None:
     """ Returns the session for a given user on a given date """
-    sess = db.query(models.Session).filter(models.Session.date == date, models.Session.user_id == uid, models.Session.is_series == is_series).first()
+    sess = db.query(models.Session).filter(models.Session.date == date, models.Session.user_id == uid).first()
     if not sess:
         return None
     games = sess.games
@@ -18,33 +18,12 @@ def getSession(db: Session, uid: str, date: datetime.date, is_series: bool) -> m
     return sess
 
 
-def createSession(db: Session, uid: str, game_options: list[Game], is_series: bool, favTeam: Optional[int]) -> models.Session:
+def createSession(db: Session, uid: str, game_options: list[Game], selTiming: str, favTeam: Optional[int]) -> models.Session:
     """ Creates a unique session for a user on a given date, optionally with a favorite team. """
 
-    session_games = []
-    options = game_options.copy()
-
-    # Extract marquee game already established
-    for game in game_options:
-        if game.is_marquee:
-            session_games.append(game)
-            options.remove(game)
-        elif favTeam and favTeam == game.homeTeam_id or favTeam == game.awayTeam_id:
-            session_games.append(game)
-            options.remove(game)
-
-    if len(session_games) == 2: # Both marquee and favTeam games are present
-        for _ in range(2):
-            session_games.append(random.choice(options))
-            options.remove(session_games[-1])
-    else:  # Only marquee exists, fill rest
-        for _ in range(3):
-            session_games.append(random.choice(options))
-            options.remove(session_games[-1])
-
     # Add session information to Session table
-    sess = models.Session(date=game_options[0].date, user_id=uid, is_series=is_series)
-    for game in session_games:
+    sess = models.Session(date=game_options[0].date, user_id=uid, is_series=(selTiming == "series"))
+    for game in generateSessionGames(game_options, selTiming, favTeam):
         sess.games.append(game)
     db.add(sess)  # Games are already added, so no need to do an add_all.
     db.commit()
@@ -52,3 +31,41 @@ def createSession(db: Session, uid: str, game_options: list[Game], is_series: bo
     games = sess.games
     picks = sess.picks
     return sess
+
+
+def generateSessionGames(game_options: list[Game], selTiming: str, favTeam: Optional[int]):
+    """ Generates a list of games for a session based on the game options and user preferences. """
+    session_games = []
+    options = game_options.copy()
+
+    marqueeGame = None
+    favTeamGame = None
+
+    for game in game_options:
+        if game.is_marquee:
+            marqueeGame = game
+            options.remove(game)
+        elif favTeam and favTeam == game.homeTeam_id or favTeam == game.awayTeam_id:
+            favTeamGame = game
+            options.remove(game)
+
+    if selTiming == "series":
+        # TODO - Implement logic for series.
+        # This shouldn't be extremely hard, but date check logic is mostly the issue here.
+        pass
+    if selTiming == "daily":
+        if favTeamGame: session_games.append(favTeamGame)
+        if marqueeGame: session_games.append(marqueeGame)
+        while len(session_games) < 4 and options:
+            session_games.append(random.choice(options))
+            options.remove(session_games[-1])
+    if selTiming == "singleteam":
+        if favTeamGame: session_games.append(favTeamGame)
+        else: session_games.append(marqueeGame) # Fall back to marquee game if no favorite team game
+    if selTiming == "marquee":
+        session_games.append(marqueeGame)
+        if favTeamGame: session_games.append(favTeamGame)
+        while len(session_games) < 2 and options:
+            session_games.append(random.choice(options))
+            options.remove(session_games[-1])
+    return session_games

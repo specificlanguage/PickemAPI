@@ -11,8 +11,8 @@ class Date(BaseModel):
 
 class UserPreferences(BaseModel):
     id: str
-    favoriteTeam: int
-    selectionTiming: str
+    favoriteTeam: int | None = None
+    selectionTiming: str | None = None
     description: str | None = None
 
 class PickBase(BaseModel):
