@@ -1,5 +1,6 @@
 from sqlalchemy import update, text
 from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert
 
 from pickem.db import models, schemas
 
@@ -12,14 +13,15 @@ def setUserPreferences(db: Session, preferences: schemas.UserPreferences):
                             favoriteTeam_id=preferences.favoriteTeam,
                             selectionTiming=preferences.selectionTiming,
                             description=preferences.description)
-    db.execute(text(f"""
-        INSERT INTO users ("id", "favoriteTeam_id", "selectionTiming") 
-        VALUES ('{userPrefs.id}', {userPrefs.favoriteTeam_id or 'NULL'}, '{userPrefs.selectionTiming}') 
-        ON CONFLICT (id) DO UPDATE SET
-        "favoriteTeam_id" = {userPrefs.favoriteTeam_id or 'NULL'},
-        "selectionTiming" = '{userPrefs.selectionTiming}'
-        "description" = '{userPrefs.description}'
-    """))
+    stmt = insert(models.User).values(userPrefs)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[models.User.id],
+        set_={
+            "favoriteTeam_id": userPrefs.favoriteTeam_id,
+            "selectionTiming": userPrefs.selectionTiming,
+            "description": userPrefs.description
+        }
+    )
     db.commit()
 
 

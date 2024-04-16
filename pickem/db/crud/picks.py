@@ -32,15 +32,16 @@ def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 1
     :param limit: The number of items to retrieve -- set to 100 by default, but can be changed if desired.
     :return:
     """
-    queryResult = db.execute(text(f"""
+    queryResult = db.execute(text("""
         SELECT picks.*, games.*,
         games.date as "date",
         picks.id IN (SELECT session_picks.pick_id FROM session_picks) as "inSession"
         FROM picks, games
-        WHERE picks.user_id = '{userID}' AND picks.game_id = games.id
+        WHERE picks.user_id = :userID AND picks.game_id = games.id AND games.date <= CURRENT_DATE
         ORDER BY "startTimeUTC" DESC
-        LIMIT {limit} OFFSET {offset};
-    """)).mappings().all()
+        LIMIT :limit OFFSET :offset;
+    """), {"userID": userID, "limit": limit, "offset": offset}).mappings().all()
+
 
     # print([str(p) for p in picks])
     # # games = [p.game for p in picks]
@@ -207,13 +208,13 @@ def get_leaders(db: Session, is_series: bool):
     Get pick leaders for the entire season.
     """
     return (
-        db.execute(text(f"""
+        db.execute(text("""
             SELECT picks.user_id as "userID",
                    sum(case when picks.correct = true then 1 else 0 end) as "correctPicks",
                    count(picks.user_id) as "totalPicks"
             from picks
-            WHERE picks.id in (SELECT pick_id from session_picks) and picks.is_series = {is_series}
+            WHERE picks.id in (SELECT pick_id from session_picks) and picks.is_series = :is_series
             GROUP BY picks.user_id
             ORDER BY "correctPicks" DESC;
-        """)).all()
+        """), {"is_series": is_series}).all()
     )
