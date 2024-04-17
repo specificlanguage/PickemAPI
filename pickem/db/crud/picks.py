@@ -23,6 +23,17 @@ def getPicksByUserDate(db: Session, userID: str, year: int, month: int, day: int
             .all())
 
 
+def getUserRecord(db: Session, userID: str, before: datetime.date = datetime.date(2024, 1, 1)):
+    """ Returns some statistics about the user's record for their session picks before a certain date. """
+    return db.execute(text("""
+        SELECT count(*) as "total_picks",
+                sum(case when picks.correct = true then 1 else 0 end) as "correct_picks"
+        FROM picks, session_picks, games
+        WHERE picks.game_id = games.id AND picks.id = session_picks.pick_id
+        AND picks.user_id = :userID AND games.date >= :before;
+    """), {"userID": userID, "before": before}).mappings().first()
+
+
 def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 100):
     """
     Retrieves a user's pick history, and also populates the games within this list.
@@ -42,10 +53,8 @@ def getUserPickHistory(db: Session, userID: str, offset: int = 0, limit: int = 1
         LIMIT :limit OFFSET :offset;
     """), {"userID": userID, "limit": limit, "offset": offset}).mappings().all()
 
-
-    # print([str(p) for p in picks])
-    # # games = [p.game for p in picks]
     return queryResult
+
 
 def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
     """
@@ -60,9 +69,9 @@ def getTotalPicksForGame(db: Session, gameID: int, isSeries: bool):
                 .where(models.Pick.game_id == gameID, models.Pick.pickedHome, models.Pick.is_series == isSeries)
                 .scalar_subquery())
     return (db.query(
-                func.count("*").label("total"),
-                subquery.label("home_picks"),
-                (func.count("*") - subquery).label("away_picks"))
+        func.count("*").label("total"),
+        subquery.label("home_picks"),
+        (func.count("*") - subquery).label("away_picks"))
             .where(models.Pick.game_id == gameID, models.Pick.is_series == isSeries).first())
 
 
@@ -74,7 +83,8 @@ def get_picks(db: Session, gameIDs: list[int], isSeries: bool, userID: str = Non
     :param isSeries:
     :return: List of pick objects
     """
-    return db.query(models.Pick).filter(models.Pick.game_id.in_(gameIDs), models.Pick.user_id == userID, models.Pick.is_series == isSeries).all()
+    return db.query(models.Pick).filter(models.Pick.game_id.in_(gameIDs), models.Pick.user_id == userID,
+                                        models.Pick.is_series == isSeries).all()
 
 
 def get_pick(db: Session, userID: str, gameID: int):
@@ -141,6 +151,7 @@ def create_picks(db: Session, userID: str, picks: list[PickCreate]):
 
     db.commit()
 
+
 def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSeries: bool, comment: str = ""):
     """
     Creates the prediction of a winner for a certain game, known as a pick. Merges pick if already exists.
@@ -177,7 +188,6 @@ def create_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
     else:
         db.add(pick)
 
-
     db.commit()
     db.refresh(pick)
 
@@ -202,6 +212,7 @@ def update_pick(db: Session, userID: str, gameID: int, pickedHome: bool, isSerie
     db.commit()
     db.refresh(pick)
     return pick
+
 
 def get_leaders(db: Session, is_series: bool):
     """

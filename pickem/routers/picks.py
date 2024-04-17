@@ -11,6 +11,7 @@ from pickem.db.crud import games, users, picks, sessions
 from pickem.db.schemas import Date
 from pickem.lib.users import getUserIdByUsername
 from pickem.dependencies import get_db, get_user
+from pickem.routers.userpicks import router as user_picks_router
 
 router = APIRouter(
     prefix="/picks",
@@ -18,6 +19,8 @@ router = APIRouter(
     dependencies=[],
     responses={404: {"message": "Not found"}}
 )
+
+router.include_router(user_picks_router)
 
 class PickEntry(BaseModel):
     gameID: int
@@ -76,6 +79,7 @@ async def getLeaderboard(db: Session = Depends(get_db)):
         "totalPicks": totalPicks,
     } for userID, correctPicks, totalPicks in leaderboard]}
 
+
 @router.get("/date")
 async def get_picks_by_date(year: int, month: int, day: int, uid=Depends(get_user), db: Session = Depends(get_db)):
     pickResults = picks.getPicksByUserDate(db, uid, year, month, day, False)
@@ -111,44 +115,6 @@ async def get_total_picks_multiple(isSeries: bool, gameID: Annotated[list[int], 
         })
     return {"results": gameResults}
 
-
-@router.get("/user/history")
-async def get_user_picks(
-        uid: str | None = None,
-        username: str | None = None,
-        db: Session = Depends(get_db),
-        offset: int = 0):
-    """
-    Gets the historical picks for a user. given a username or a user id, optionally an offset if all exhausted.
-    :param uid: User id to retrieve.
-    :param username: Username to retrieve. This is slightly slower since it need to obtain a userID from cache.
-    Returns list of picks.
-    """
-    if not uid and not username:
-        raise HTTPException(404, detail="User not found or not provided")
-    if not uid and username:
-        uid = getUserIdByUsername(username)
-    dbResp = picks.getUserPickHistory(db, uid, offset=offset)
-    return [{
-        "userID": row["user_id"],
-        "gameID": row["game_id"],
-        "pickedHome": row["pickedHome"],
-        "isSeries": row["is_series"],
-        "isSession": row["inSession"],
-        "correct": row["correct"],
-        "game": {
-            "id": row["game_id"],
-            "homeTeam_id": row["homeTeam_id"],
-            "awayTeam_id": row["awayTeam_id"],
-            "date": row["date"],
-            "finished": row["finished"],
-            "winner": row["winner"],
-            "startTimeUTC": row["startTimeUTC"],
-            "isMarquee": row["is_marquee"],
-            "home_score": row["home_score"],
-            "away_score": row["away_score"],
-        }
-    } for row in dbResp]
 
 @router.get("/{gameID}/all")
 async def get_total_picks(gameID: int, isSeries: bool, db: Session = Depends(get_db)):
