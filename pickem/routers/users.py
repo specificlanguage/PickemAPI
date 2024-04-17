@@ -20,21 +20,32 @@ router = APIRouter(
     responses={404: {"message": "Not found"}}
 )
 
+
 class PreferencesPut(BaseModel):
     favoriteTeam: Optional[int] = None
     selectionTiming: Optional[str] = None
     description: Optional[str] = None
+
 
 @router.put("/preferences")
 def set_preferences(prefs: PreferencesPut,
                     userID: str = Depends(get_user),
                     db: Session = Depends(get_db)):
     existingPrefs = getUserPreferences(db, userID)
-    setUserPreferences(db, schemas.UserPreferences(
-        favoriteTeam=prefs.favoriteTeam if prefs.favoriteTeam else existingPrefs.favoriteTeam_id,
-        selectionTiming=prefs.selectionTiming if prefs.selectionTiming else existingPrefs.selectionTiming,
-        description=prefs.description if prefs.description else existingPrefs.description,
-        id=userID))
+    if not existingPrefs:
+        if not prefs.selectionTiming or not prefs.favoriteTeam:
+            raise HTTPException(status_code=400, detail="Selection timing and favorite team are required on initial onboarding.")
+        setUserPreferences(db, schemas.UserPreferences(
+            id=userID,
+            favoriteTeam=prefs.favoriteTeam,
+            selectionTiming=prefs.selectionTiming,
+        ))
+    else:
+        setUserPreferences(db, schemas.UserPreferences(
+            favoriteTeam=prefs.favoriteTeam if prefs.favoriteTeam else existingPrefs.favoriteTeam_id,
+            selectionTiming=prefs.selectionTiming if prefs.selectionTiming else existingPrefs.selectionTiming,
+            description=prefs.description if prefs.description else existingPrefs.description,
+            id=userID))
     return {"message": "Preferences updated"}
 
 
@@ -83,4 +94,3 @@ async def getUserByID(user_identifier: str, db: Session = Depends(get_db)):
         "favoriteTeam_id": res.favoriteTeam_id,
         "description": res.description
     }
-
