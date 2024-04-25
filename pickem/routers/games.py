@@ -152,8 +152,14 @@ async def get_game_status(gameID: int, redis: Redis = Depends(get_redis), db: Se
 
 
 @router.get("/{id}")
-async def get_game(id: str, db: Session = Depends(get_db)):
-    game = await games.getGame(db, int(id))
+def get_game(id: str, db: Session = Depends(get_db)):
+    """
+    Get a game from the database by its ID.
+    :param id:
+    :param db:
+    :return:
+    """
+    game = games.getGame(db, int(id))
     if not game:
         raise HTTPException(status_code=404, detail="Game does not exist")
     return game

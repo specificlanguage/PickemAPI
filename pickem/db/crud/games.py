@@ -36,17 +36,15 @@ def getTeamByAbbr(db: Session, abbr: str):
     return db.query(models.Team).filter(models.Team.abbr == abbr).first()
 
 
-async def getGame(db: Session, gameID: int) -> models.Game | None:
-    try:
-        game, homeTeamName, awayTeamName = (await getGameBaseQuery(db)
+def getGame(db: Session, gameID: int) -> models.Game | None:
+    game, homeTeamName, awayTeamName = (getGameBaseQuery(db)
                                             .filter(models.Game.id == gameID)
                                             .first())
-        game.homeName = homeTeamName
-        if game is not None:
-            game.awayName = awayTeamName
-            return game
-    except TypeError as e:
-        return None
+    game.homeName = homeTeamName
+    if game is not None:
+        game.awayName = awayTeamName
+        return game
+    return None
 
 
 def getGamesWithTeams(db: Session, team1_id: int, team2_id: int):
