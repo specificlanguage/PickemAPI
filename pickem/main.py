@@ -5,7 +5,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend # TODO later: use Re
 from fastapi_cache.decorator import cache
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-import httpx
+import httpx, os
 
 from pickem.routers import games, picks, users
 from pickem.dependencies import get_db
@@ -21,7 +21,7 @@ app.include_router(users.router)
 # TODO use env variables depending on env
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[os.getenv("FRONTEND_URL")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

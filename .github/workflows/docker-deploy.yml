@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{github.repository}}
+  IMAGE_NAME: specificlanguage/pickem-api
 
 jobs:
   build_and_push:
@@ -49,26 +49,35 @@ jobs:
           tags: ${{steps.meta.outputs.tags}}
           labels: ${{steps.meta.outputs.labels}}
 
-#  deploy:
-#    runs-on: ubuntu-latest
-#    needs: build_and_push
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Log in to repo
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ${{env.REGISTRY}}
-#          username: ${{github.actor}}
-#          password: ${{secrets.GITHUB_TOKEN}}
-#
-#      - name: Pull image
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{secrets.DROPLET_IP}}
-#          username: root # this is generally dangerous, please modify this in the future
-#          key: ${{secrets.DROPLET_SSH_KEY}}
-#          script: |
-#            docker run ${{env.REGISTRY}}/${{env.USERNAME}}:latest
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to repo
+        uses: docker/login-action@v3
+        with:
+          registry: ${{env.REGISTRY}}
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Pull image
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{secrets.DROPLET_IP}}
+          username: root # this is generally dangerous, please modify this in the future
+          key: ${{secrets.DROPLET_SSH_KEY}}
+          passphrase: ${{secrets.DROPLET_SSH_PASSPHRASE}}
+          script: |
+            > .env
+            echo DATABASE_URL=${{secrets.DATABASE_URL}} >> .env
+            echo "REDIS_URL=${{secrets.REDIS_URL}}" >> .env
+            echo CLERK_API_KEY=${{secrets.CLERK_API_KEY}} >> .env
+            echo FRONTEND_URL=${{secrets.FRONTEND_URL}} >> .env
+            docker stop pickem
+            docker rm pickem
+            docker run --pull=always --name=pickem -d -p 80:80 --env-file .env ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
