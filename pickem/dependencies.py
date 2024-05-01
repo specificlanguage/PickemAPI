@@ -18,11 +18,13 @@ def get_user(authorization: Annotated[str | None, Header()] = None):
 
     # Check to verify information is present
     try:
+        token = authorization.split(" ")[1]
+        print(token)
+
         # Query the Clerk API to get JWKS, get token and signing key
         resp = httpx.get("https://api.clerk.dev/v1/jwks",
                          headers={"Authorization": "Bearer " + os.environ["CLERK_API_KEY"]}).json()
         signing_key = jwk_from_dict(resp["keys"][0])
-        token = authorization.split(" ")[1]
 
         # Verify token, expiration time, and authorized party
         message_received = JWT_Instance.decode(token, signing_key)

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend # TODO later: use Redis
 from fastapi_cache.decorator import cache
@@ -18,10 +18,12 @@ app.include_router(games.router)
 app.include_router(picks.router)
 app.include_router(users.router)
 
+print(os.getenv("FRONTEND_URL"))
+
 # TODO use env variables depending on env
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL")],
+    allow_origins=["http://localhost:4173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

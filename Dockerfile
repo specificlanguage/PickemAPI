@@ -8,7 +8,7 @@ RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 FROM python:3.10
 WORKDIR /code
-EXPOSE 80
+EXPOSE 8080
 
 COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
 
