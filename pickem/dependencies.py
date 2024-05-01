@@ -19,7 +19,6 @@ def get_user(authorization: Annotated[str | None, Header()] = None):
     # Check to verify information is present
     try:
         token = authorization.split(" ")[1]
-        print(token)
 
         # Query the Clerk API to get JWKS, get token and signing key
         resp = httpx.get("https://api.clerk.dev/v1/jwks",
