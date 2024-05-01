@@ -10,7 +10,7 @@ from jwt import JWT, jwk_from_dict
 from pickem.db.alchemy import SessionLocal, RedisPool
 
 JWT_Instance = JWT()
-AUTHORIZED_PARTIES = ["http://localhost:5173"]
+AUTHORIZED_PARTIES = [os.getenv("FRONTEND_URL")]
 
 
 def get_user(authorization: Annotated[str | None, Header()] = None):
