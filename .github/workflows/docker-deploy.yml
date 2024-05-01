@@ -80,4 +80,4 @@ jobs:
             echo FRONTEND_URL=${{secrets.FRONTEND_URL}} >> .env
             docker stop pickem
             docker rm pickem
-            docker run --pull=always --name=pickem -d -p 80:80 --env-file .env ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+            docker run --pull=always --name=pickem -d -p 8080:8080 --env-file .env ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
